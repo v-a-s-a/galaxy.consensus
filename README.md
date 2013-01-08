@@ -1,4 +1,4 @@
 galaxy.consensus
 ================
 
-consensus calling tool for cox Galaxy instance.
+Consensus calling tool for cox Galaxy instance.
