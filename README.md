@@ -18,12 +18,12 @@ Dependencies:
 The major dependency that must be installed on the system is James Casbon's vcf
 parser.
 
-A cloned copy exists in lib/. (( https://github.com/jamescasbon/PyVCF.git ))
+A cloned copy exists in lib/. Link:(( https://github.com/jamescasbon/PyVCF.git ))
 
 You can do the standard python install by running from the PyVCF directory:
 
-python setup.py build
-python setup.py install
+    python setup.py build
+    python setup.py install
 
 
 Example:
