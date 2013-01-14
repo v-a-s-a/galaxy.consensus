@@ -1,17 +1,16 @@
-
 galaxy.consensus Introduction:
 ==============================
 
 This is a first pass implementation for a consensus caller that merges
-outputs from ATLAS SNP2, freebayes, and GATK Unified Genotyper.
+output VCF files from ATLAS SNP2, freebayes, and GATK Unified Genotyper.
 
 Options:
 ========
-  -h, --help                        show this help message and exit
-  --out=BASEOUT                     File path base for output of .vcf and .log files.
-  --atlas-vcf=ATLASVCF              Location of ATLAS vcf file for consensus.
-  --gatk-vcf=GATKVCF                Location of GATK vcf file for consensus.
-  --freebayes-vcf=FREEBAYESVCF      Location of freebayes vcf file for consensus.
+    -h, --help                        show this help message and exit
+    --out=BASEOUT                     File path base for output of .vcf and .log files.
+    --atlas-vcf=ATLASVCF              Location of ATLAS vcf file for consensus.
+    --gatk-vcf=GATKVCF                Location of GATK vcf file for consensus.
+    --freebayes-vcf=FREEBAYESVCF      Location of freebayes vcf file for consensus.
 
 
 Dependencies:
