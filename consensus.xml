@@ -1,0 +1,54 @@
+<tool id="naive_consensus_1" name="AWESOME naive consensus">
+    <description>
+        Naive consensus caller for ATLAS SNP2, GATK UG, freebayes output files.
+    </description>
+
+    <command interpreter="python">
+        consensus.py $ATLAS_VCF $GATK_VCF $FREEBAYES_VCF $OUT
+    </command>
+
+    <inputs>
+        <conditional name="reference source">
+            <param name="reference_source_selector">
+                <option value="cached">Locally cached</option>
+                <option value="history">History</option>
+            </param>
+            <when value="cached">
+                <param name="atlas-vcf" type="data" format="vcf"
+                    label="ATLAS VCF">
+                </param>
+                <param name="freebayes-vcf" type="data" format="vcf"
+                    label="freebayes VCF">
+                </param>
+                <param name="gatk-vcf" type="data" format="vcf"
+                    label="GATK VCF">
+                </param>
+                <param name="output" format="vcf" label="Consensus VCF">
+                </param>
+            <when value="history">
+                <param name="atlas-vcf" type="data" format="vcf"
+                    label="ATLAS VCF">
+                </param>
+                <param name="freebayes-vcf" type="data" format="vcf"
+                    label="freebayes VCF">
+                </param>
+                <param name="gatk-vcf" type="data" format="vcf"
+                    label="GATK VCF">
+                </param>
+                <param name="output" format="vcf" label="Consensus VCF">
+                </param>
+            </when>
+        </conditional> 
+    </inputs>
+    
+    <outputs>
+        <data format="vcf" name="output_vcf" label="Consensus VCF">
+    </outputs>
+
+    <help>
+        This tool is designed to accept output VCF files from freebayes, GATK
+        Unified Genotyper, and ATLAS SNP2 and merge variation called within
+        those.
+    </help>
+
+</tool>
