@@ -1,4 +1,6 @@
-<tool id="naive_consensus_1" name="AWESOME naive consensus">
+<?xml version="1.0"?>
+
+<tool name="Consensus Variant Calling" id="awesome_consensus_0.1"  > 
     <description>
         Naive consensus caller for ATLAS SNP2, GATK UG, freebayes output files.
     </description>
@@ -8,41 +10,21 @@
     </command>
 
     <inputs>
-        <conditional name="reference source">
-            <param name="reference_source_selector">
-                <option value="cached">Locally cached</option>
-                <option value="history">History</option>
-            </param>
-            <when value="cached">
-                <param name="atlas-vcf" type="data" format="vcf"
-                    label="ATLAS VCF">
-                </param>
-                <param name="freebayes-vcf" type="data" format="vcf"
-                    label="freebayes VCF">
-                </param>
-                <param name="gatk-vcf" type="data" format="vcf"
-                    label="GATK VCF">
-                </param>
-                <param name="output" format="vcf" label="Consensus VCF">
-                </param>
-            <when value="history">
-                <param name="atlas-vcf" type="data" format="vcf"
-                    label="ATLAS VCF">
-                </param>
-                <param name="freebayes-vcf" type="data" format="vcf"
-                    label="freebayes VCF">
-                </param>
-                <param name="gatk-vcf" type="data" format="vcf"
-                    label="GATK VCF">
-                </param>
-                <param name="output" format="vcf" label="Consensus VCF">
-                </param>
-            </when>
-        </conditional> 
+        <param name="ATLAS_VCF" type="data" format="vcf"
+            label="ATLAS VCF">
+        </param>
+        <param name="FREEBAYES_VCF" type="data" format="vcf"
+            label="freebayes VCF">
+        </param>
+        <param name="GATK_VCF" type="data" format="vcf"
+            label="GATK VCF">
+        </param>
+        <param name="OUT" format="vcf" type="data" label="Consensus VCF">
+        </param>
     </inputs>
     
     <outputs>
-        <data format="vcf" name="output_vcf" label="Consensus VCF">
+        <data format="vcf" name="output_vcf" label="Consensus VCF" />
     </outputs>
 
     <help>
