@@ -1,12 +1,15 @@
 <?xml version="1.0"?>
 
-<tool name="Consensus Variant Calling" id="awesome_consensus_0.1"  > 
+<tool name="naive variant consensus caller" id="awesome_consensus_0.1"  > 
     <description>
         Naive consensus caller for ATLAS SNP2, GATK UG, freebayes output files.
     </description>
 
     <command interpreter="python">
-        consensus.py $ATLAS_VCF $GATK_VCF $FREEBAYES_VCF $OUT
+        consensus.py --atlas-vcf $ATLAS_VCF \
+            --gatk-vcf $GATK_VCF \
+            --freebayes-vcf $FREEBAYES_VCF \
+            --out $OUT
     </command>
 
     <inputs>
