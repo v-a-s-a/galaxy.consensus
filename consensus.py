@@ -121,7 +121,7 @@ def genoConsensus(genoList):
         ## two values aggree
     else:
         ## no values aggree
-        return '*'
+        return '*/*'
 
 
 #vcfFiles = ['data/ATLAS.merged.ontarget.chr22.SM.vcf',
@@ -149,6 +149,7 @@ def main():
     cur = con.cursor()
    
 
+    print 'Building database of calls.'
     ## push vcf files into database as tables
     vcfFiles = {'freebayes':options.freebayesVcf,
                 'gatk':options.gatkVcf,
@@ -156,6 +157,7 @@ def main():
     for vcf in vcfFiles.itervalues():
         fileName = os.path.basename(vcf)
         table = fileName.split('.')[0]
+        print '\tparsing %s VCF file ...' % table
         db = store_vcf(vcf, table, con)
 
 
@@ -189,6 +191,7 @@ def main():
     ## set of samples common to each database
     commonSam = reduce( lambda x,y: x.intersection(y), sampleSets )
 
+    print 'Calling consensus genotypes for each variant.'
     ## create consensus table in db
     cur.execute("DROP TABLE IF EXISTS consensus")
     colTemplate = ['varID TEXT',
