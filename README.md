@@ -12,8 +12,7 @@ Options:
     --out=BASEOUT                     File path base for output of .vcf and .log files.
     --atlas-vcf=ATLASVCF              Location of ATLAS vcf file for consensus.
     --gatk-vcf=GATKVCF                Location of GATK vcf file for consensus.
-    --freebayes-vcf=FREEBAYESVCF      Location of freebayes vcf file for
-consensus.
+    --freebayes-vcf=FREEBAYESVCF      Location of freebayes vcf file for consensus.
 
 
 Dependencies:
