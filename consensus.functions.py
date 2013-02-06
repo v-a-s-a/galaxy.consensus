@@ -58,6 +58,8 @@ def store_vcf(vcfFile, tableName, dbCon):
 
         ## while loop for debugging record iter in reader
         while True:
+        
+    
             try:
                 rec = reader.next()
             except StopIteration:
@@ -68,6 +70,11 @@ def store_vcf(vcfFile, tableName, dbCon):
                 print '# of variants inserted into %s: %s' % (tableName, tableSize)
                 
             
+            ## skip multi-nucleotide polymorphisms
+            if len(rec.ALT) > 1:
+                continue
+
+ 
             ## create build a record for the variant
             varRec = [ rec.CHROM + '_' + str(rec.POS),
                 rec.CHROM,
