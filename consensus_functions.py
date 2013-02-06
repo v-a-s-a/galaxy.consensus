@@ -1,4 +1,7 @@
 
+import vcf as vcfMod
+
+
 #################
 ### FUNCTIONS ###
 #################

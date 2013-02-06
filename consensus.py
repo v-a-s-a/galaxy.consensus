@@ -22,7 +22,7 @@ import vcf as vcfMod
 ###############
 
 from pyVCF_record import _Record, _AltRecord, _Substitution
-from consensus.functions import *
+from consensus_functions import *
 
 
 
