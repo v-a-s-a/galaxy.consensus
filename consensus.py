@@ -191,6 +191,7 @@ def main():
     vcfCon = open(vcfOut, 'w')
     ## write header
     print >> vcfCon, '##fileformat=VCFv4.0'
+    print >> vcfCon, '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">'
     header = ['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT']
     for sam in commonSam: header.append(str(sam).strip('"'))
     print >> vcfCon, '\t'.join(header)
@@ -207,7 +208,7 @@ def main():
         sampleGeno = [ geno[str(sam).strip('"')] for sam in commonSam ]
         
         ##assemble the row
-        row = [chr, pos, var, ref, alt, '.', '.', '.', '.']
+        row = [chr, pos, var, ref, alt, '.', '.', '.', 'GT']
         for sam in commonSam: row.append( geno[str(sam).strip('"')].strip('\'') )
         print >> vcfCon, '\t'.join(row)
 
