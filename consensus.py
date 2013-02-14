@@ -127,6 +127,7 @@ def main():
         pos = list()
         alt = list()
         ref = list()
+        infoFields = dict()
         
         for table in vcfTables:
 
@@ -139,6 +140,9 @@ def main():
             pos.append(row['pos'])
             ref.append(row['ALT'])
             alt.append(row['REF'])
+
+            ## store QUAL scores
+            infoFields[table] = row['QUAL']
         
         ## uniquify and check that all values that should match, match
         chr = set(chr)
@@ -161,7 +165,13 @@ def main():
         varID = var
         qual = '-'
         filter = '-'
-        info = '-'
+
+        ## store QUAL scores in info matching the a specific order
+        info = list()
+        fieldAbbrev = {'atlas':'AQ', 'freebayes':'FQ', 'gatk':'GQ'}
+        for caller in fieldAbbrev.keys():
+            info.append(fieldAbbrev[caller] + '=' + infoFields[caller])
+        info = ';'.join(info)
         
         consensusRecord = [varID, chr, pos, ref, alt, qual, filter, info] 
         for sam in commonSam:
@@ -191,25 +201,32 @@ def main():
     vcfCon = open(vcfOut, 'w')
     ## write header
     print >> vcfCon, '##fileformat=VCFv4.0'
+    print >> vcfCon, '##INFO=<ID=AQ,Number=1,Type=Float,Description="ATLAS QUAL score for variant.">'
+    print >> vcfCon, '##INFO=<ID=FQ,Number=1,Type=Float,Description="Freebayes QUAL score for variant.">'
+    print >> vcfCon, '##INFO=<ID=GQ,Number=1,Type=Float,Description="GATK QUAL score for variant.">'
     print >> vcfCon, '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">'
     header = ['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT']
     for sam in commonSam: header.append(str(sam).strip('"'))
     print >> vcfCon, '\t'.join(header)
 
     cur.execute("SELECT * FROM consensus")
-    genotypes = cur.fetchall()
-    for geno in genotypes:
+    consensusVar = cur.fetchall()
+    for var in consensusVar:
         ## query the record
-        var = str(geno['varID'])
-        chr = str(geno['chr'])
-        pos = str(geno['pos'])
-        ref = str(geno['REF'])
-        alt = str(geno['alt'])
-        sampleGeno = [ geno[str(sam).strip('"')] for sam in commonSam ]
+        varid = str(var['varID'])
+        chr = str(var['chr'])
+        pos = str(var['pos'])
+        ref = str(var['REF'])
+        alt = str(var['alt'])
+        qual = '.'
+        filter = '.'
+        info = str(var['INFO']) 
+        format = 'GT'
+        sampleGeno = [ var[str(sam).strip('"')] for sam in commonSam ]
         
         ##assemble the row
-        row = [chr, pos, var, ref, alt, '.', '.', '.', 'GT']
-        for sam in commonSam: row.append( geno[str(sam).strip('"')].strip('\'') )
+        row = [chr, pos, varid, ref, alt, qual, filter, info, format]
+        for sam in commonSam: row.append( var[str(sam).strip('"')].strip('\'') )
         print >> vcfCon, '\t'.join(row)
 
 if __name__ == "__main__":

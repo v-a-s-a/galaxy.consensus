@@ -26,6 +26,7 @@ def store_vcf(vcfFile, tableName, dbCon):
         -col for position
         -col for REF allele
         -col for ALT allele
+        -col for QUAL
         -col for sample genotype -- sample IDs are enclosed by "
     '''
 
