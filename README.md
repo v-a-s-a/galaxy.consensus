@@ -13,6 +13,7 @@ Options:
     --atlas-vcf=ATLASVCF              Location of ATLAS vcf file for consensus.
     --gatk-vcf=GATKVCF                Location of GATK vcf file for consensus.
     --freebayes-vcf=FREEBAYESVCF      Location of freebayes vcf file for consensus.
+    --db-file=DBFILE                  Location of file for sqlite db
 
 
 Dependencies:
@@ -37,10 +38,11 @@ Test data is located in the data/ directory.
 
 To run the test data, try:
 
-    consensus.py --base-out TEST \
-      --vcf-files data/ATLAS.merged.ontarget.chr22.SM.vcf \
-      data/freebayes.chr22.multisample.ontarget.vcf.recode.vcf \
-      data/GATK.multisample.ontarget.chr22.vcf.recode.vcf
+    consensus.py --out TEST \
+      --atlas-vcf data/ATLAS.merged.ontarget.chr22.SM.vcf \
+      --freebayes-vcf data/freebayes.chr22.multisample.ontarget.vcf.recode.vcf \
+      --gatk-vcf data/GATK.multisample.ontarget.chr22.vcf.recode.vcf \
+      --db-file mktemp
 
 
 This should produce a file:
