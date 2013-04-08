@@ -144,6 +144,7 @@ def main():
             ## store QUAL scores
             infoFields[table] = row['QUAL']
         
+        ## TODO this should be guaranteed upstream!
         ## uniquify and check that all values that should match, match
         chr = set(chr)
         pos = set(pos)
