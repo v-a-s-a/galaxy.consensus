@@ -41,7 +41,8 @@ To run the test data, try:
     consensus.py --out TEST \
       --atlas-vcf data/ATLAS.merged.ontarget.chr22.SM.vcf \
       --freebayes-vcf data/freebayes.chr22.multisample.ontarget.vcf.recode.vcf \
-      --gatk-vcf data/GATK.multisample.ontarget.chr22.vcf.recode.vcf
+      --gatk-vcf data/GATK.multisample.ontarget.chr22.vcf.recode.vcf \
+      --db-file mktemp
 
 
 This should produce a file:
