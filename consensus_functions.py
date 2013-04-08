@@ -102,20 +102,17 @@ def genoConsensus(genoList):
     Create consensus of hard call genotypes:
 
     @genoList: a list of genotypes in the format '0/1', with missing as '.'
-    @return: return a hard call of the genotype, or '*' if no consensus
+    @return: return a hard call of the genotype. */* if no consensus.
 
-    TODO:
-        TEST THIS PLEASE OH GOD TEST THIS
-        Sane handling of missing data -- two missing means low qual?
     '''
 
     if genoList[0] == genoList[1]:
         ## two values aggree
         return genoList[0]
-    elif genoList[1]==genoList[2]:
+    elif genoList[1] == genoList[2]:
         ## two values aggree
         return genoList[1]
-    elif genoList[0]==genoList[2]:
+    elif genoList[0] == genoList[2]:
         return genoList[0]
         ## two values aggree
     else:

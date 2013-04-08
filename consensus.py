@@ -170,7 +170,7 @@ def main():
 
         ## store QUAL scores in info matching the a specific order
         info = list()
-        fieldAbbrev = {'atlas':'AQ', 'freebayes':'FQ', 'GATK':'GQ'}
+        fieldAbbrev = {'atlas':'AQ', 'freebayes':'FQ', 'gatk':'GQ'}
         for caller in fieldAbbrev.keys():
             info.append(fieldAbbrev[caller] + '=' + infoFields[caller])
         info = ';'.join(info)
@@ -178,18 +178,15 @@ def main():
         consensusRecord = [varID, chr, pos, ref, alt, qual, filter, info] 
         for sam in commonSam:
             
-            ## this works but is far too slow!
-            #cur.execute("SELECT %s FROM %s WHERE variant='%s'" % (sam, table, var) )
-            
             ## dict access of row is much faster
             ## store genotype for each sample in consensus table
             genoSet = [ callerGenotypes[table][str(sam).strip('"')] for table in vcfTables ]
-            consGeno = genoConsensus(genoSet)
+            genotypeField = genoConsensus(genoSet)
             
             ## TODO :: handle missing data more intelligently
-            if not consGeno:
-                consGeno = './.'
-            consensusRecord.append('\'' + str(consGeno) + '\'')
+            if not genotypeField:
+                 genotypeField = './.'
+            consensusRecord.append('\'' + str(genotypeField) + '\'')
         
         valString = ','.join( tuple('?'*len(consensusRecord)) ) 
         cur.execute("INSERT INTO consensus VALUES(%s)" % valString, consensusRecord)
@@ -207,6 +204,7 @@ def main():
     print >> vcfCon, '##INFO=<ID=FQ,Number=1,Type=Float,Description="Freebayes QUAL score for variant.">'
     print >> vcfCon, '##INFO=<ID=GQ,Number=1,Type=Float,Description="GATK QUAL score for variant.">'
     print >> vcfCon, '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">'
+    print >> vcfCon, '##FORMAT=<ID=CN,Number=1,Type=Character,Description="Consensus status of genotype.">'
     header = ['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT']
     for sam in commonSam: header.append(str(sam).strip('"'))
     print >> vcfCon, '\t'.join(header)
@@ -214,7 +212,7 @@ def main():
     cur.execute("SELECT * FROM consensus")
     consensusVar = cur.fetchall()
     for var in consensusVar:
-        ## query the record
+        ## query variant record
         varid = str(var['varID'])
         chr = str(var['chr'])
         pos = str(var['pos'])
@@ -223,12 +221,23 @@ def main():
         qual = '.'
         filter = '.'
         info = str(var['INFO']) 
-        format = 'GT'
-        sampleGeno = [ var[str(sam).strip('"')] for sam in commonSam ]
+        format = 'GT:CN'
+        #sampleGeno = [ var[str(sam).strip('"')] for sam in commonSam ]
         
         ##assemble the row
         row = [chr, pos, varid, ref, alt, qual, filter, info, format]
-        for sam in commonSam: row.append( var[str(sam).strip('"')].strip('\'') )
+        for sam in commonSam:
+            ## pull genotype
+            geno = var[str(sam).strip('"')].strip('\'')
+
+            ## record consensus status
+            if geno == '*/*':
+              consensusFlag = 'F'
+              geno = './.'
+            else:
+              consensusFlag = 'T'
+ 
+            row.append( geno + ':' + consensusFlag )
         print >> vcfCon, '\t'.join(row)
 
 if __name__ == "__main__":
