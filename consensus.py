@@ -25,7 +25,6 @@ from pyVCF_record import _Record, _AltRecord, _Substitution
 from consensus_functions import *
 
 
-
 #vcfFiles = ['data/ATLAS.merged.ontarget.chr22.SM.vcf',
 #    'data/GATK.multisample.ontarget.chr22.vcf.recode.vcf',
 #    'data/freebayes.chr22.multisample.ontarget.vcf.recode.vcf']
@@ -43,11 +42,13 @@ def main():
         help = 'Location of GATK vcf file for consensus.')
     parser.add_option('--freebayes-vcf', dest = 'freebayesVcf', action = 'store',
         help = 'Location of freebayes vcf file for consensus.')
+    parser.add_option('--db-file', dest = 'dbFile', action = 'store',
+        help = 'Location of file for sqlite db')
     (options, args) = parser.parse_args()
 
 
     ## start up database connection in temporary location
-    con = sql.connect('/tmp/consensus.db')
+    con = sql.connect(options.dbFile)
     cur = con.cursor()
    
 
@@ -168,7 +169,7 @@ def main():
 
         ## store QUAL scores in info matching the a specific order
         info = list()
-        fieldAbbrev = {'atlas':'AQ', 'freebayes':'FQ', 'gatk':'GQ'}
+        fieldAbbrev = {'atlas':'AQ', 'freebayes':'FQ', 'GATK':'GQ'}
         for caller in fieldAbbrev.keys():
             info.append(fieldAbbrev[caller] + '=' + infoFields[caller])
         info = ';'.join(info)
@@ -197,7 +198,7 @@ def main():
     ## write out a vcf file
     ## initialize vcf writer
 
-    vcfOut = options.baseOut + '.vcf'
+    vcfOut = options.baseOut
     vcfCon = open(vcfOut, 'w')
     ## write header
     print >> vcfCon, '##fileformat=VCFv4.0'
