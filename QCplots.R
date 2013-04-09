@@ -8,10 +8,14 @@
 
 library(ggplot2)
 
-atlas.base <- '/nas40t0/vasya/consensus_call/galaxy.consensus/qc_data/atlas.exon'
-freebayes.base <- '/nas40t0/vasya/consensus_call/galaxy.consensus/qc_data/freebayes.exon'
-gatk.base <- '/nas40t0/vasya/consensus_call/galaxy.consensus/qc_data/gatk.exon'
-consensus.base <- '/nas40t0/vasya/consensus_call/galaxy.consensus/qc_data/parallel.consensus'
+atlas.base <-
+'/nas40t0/vasya/consensus_call/galaxy.consensus/ts_exomes_data/atlas_exome_chrid_sm.vcf'
+freebayes.base <-
+'/nas40t0/vasya/consensus_call/galaxy.consensus/ts_exomes_data/freebayes_03-25_exome_minQ.vcf'
+gatk.base <-
+'/nas40t0/vasya/consensus_call/galaxy.consensus/ts_exomes_data/gatk_05-05_exome.vcf'
+consensus.base <-
+'/nas40t0/vasya/consensus_call/galaxy.consensus/ts_exomes_data/ts.exome.consensus.vcf'
 
 bases <- c(atlas.base, freebayes.base, gatk.base, consensus.base)
 

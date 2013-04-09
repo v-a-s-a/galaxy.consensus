@@ -59,10 +59,9 @@ def main():
                 'atlas':options.atlasVcf}
 
     ## order the files in order to debug freebayes
-    orderedVcfFiles = [vcfFiles['freebayes'], vcfFiles['gatk'], vcfFiles['atlas']]
-    for vcf in orderedVcfFiles:
-        fileName = os.path.basename(vcf)
-        table = fileName.split('.')[0]
+    orderedVcfFiles = ['freebayes', 'gatk', 'atlas']
+    for table in orderedVcfFiles:
+        vcf = vcfFiles[table]
         print '\tparsing %s VCF file ...' % table
         db = store_vcf(vcf, table, con)
 
