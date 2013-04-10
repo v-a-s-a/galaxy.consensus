@@ -57,19 +57,11 @@ def main():
     vcfFiles = {'freebayes':options.freebayesVcf,
                 'gatk':options.gatkVcf,
                 'atlas':options.atlasVcf}
-
-    ## order the files in order to debug freebayes
-    orderedVcfFiles = ['freebayes', 'gatk', 'atlas']
-    for table in orderedVcfFiles:
+    vcfTables = ['freebayes', 'gatk', 'atlas']
+    for table in vcfTables:
         vcf = vcfFiles[table]
         print '\tparsing %s VCF file ...' % table
         db = store_vcf(vcf, table, con)
-
-
-
-    ## find all of the tables in the db
-    cur.execute("SELECT * FROM sqlite_master WHERE type='table'")
-    vcfTables = [ table[1] for table in cur.fetchall() if table[1]!='consensus' ] 
 
     
     ## find variants and samples common to all db
@@ -165,7 +157,7 @@ def main():
         ## create a row of consensus genotypes for this variant
         varID = var
         qual = '-'
-        filter = '-'
+        filter = 'PASS'
 
         ## store QUAL scores in info matching the a specific order
         info = list()
