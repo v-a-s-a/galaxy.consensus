@@ -44,7 +44,7 @@ def store_vcf(vcfFile, tableName, dbCon):
         'FILTER TEXT',
         'INFO TEXT']
     types = [ 'TEXT' for sam in reader.samples ]
-    samples = [ '\"' + sam + '\"' for sam in reader.samples  ]
+    samples = [ '"' + sam + '"' for sam in reader.samples  ]
     samCol = [ ' '.join(pair) for pair in zip(samples, types) ]
     template = ','.join( colTemplate + samCol )
 

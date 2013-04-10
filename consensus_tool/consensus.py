@@ -63,30 +63,23 @@ def main():
         print '\tparsing %s VCF file ...' % table
         db = store_vcf(vcf, table, con)
 
-    
-    ## find variants and samples common to all db
-    varSets = list()
-    sampleSets = list()
+
+    ## get IDs of samples common to all sets
+    names = list()
     for table in vcfTables:
-        
-        cur.execute('SELECT varID FROM %s' % table )
-        variants = cur.fetchall()
-        
-        ## add set of variants to list 
-        variants = set([ x[0] for x in variants ])
-        varSets.append(variants)
+        colq = cur.execute( 'SELECT * from %s' % table )
+        names.append(set(map(lambda x: x[0], colq.description)))
+    commonSam = reduce(lambda x,y: x.intersection(y), names )
+    vcfCols = {'varID':1, 'chr':1, 'pos':1, 'REF':1, 'ALT':1, 'QUAL':1, 'FILTER':1, 'INFO':1}
+    commonSam = [ x for x in commonSam if not vcfCols.get(x)  ]
 
-        ## add column names
-        cur.execute("PRAGMA TABLE_INFO(%s)" % table)
-        colnames = [ '\"'+col[1]+'\"' for col in cur.fetchall() ]
-        samples = set(colnames[9:])
-        sampleSets.append(samples) 
-
-    ## set of variants common to each database        
-    commonVar = reduce( lambda x,y: x.intersection(y), varSets )
-
-    ## set of samples common to each database
-    commonSam = reduce( lambda x,y: x.intersection(y), sampleSets )
+    ## get IDs of snps common to all sets
+    varquery = 'SELECT a.varID FROM\
+            atlas AS a\
+            JOIN freebayes AS f ON a.varID=f.varID\
+            JOIN gatk as g ON a.varID=g.varID'
+    cur.execute(varquery)
+    commonVar = cur.fetchall() 
 
     print 'Calling consensus genotypes for each variant.'
     ## create consensus table in db
@@ -100,8 +93,7 @@ def main():
         'FILTER TEXT',
         'INFO TEXT']
     types = [ 'TEXT' for sam in commonSam ]
-    #samples = [ '\"' + sam + '\"' for sam in commonSam  ]
-    samples = [ sam for sam in commonSam  ]
+    samples = [ '"' + sam + '"' for sam in commonSam  ]
     samCol = [ ' '.join(pair) for pair in zip(samples, types) ]
     template = ','.join( colTemplate + samCol )
     cur.execute("CREATE TABLE consensus(%s)" % template )
@@ -109,9 +101,12 @@ def main():
     ## swicth to dict cursor for fast row access
     con.row_factory = sql.Row
     cur = con.cursor()
+
+
     
     ## pull sample genotypes for each variant
     for idx, var in enumerate(commonVar):
+        var = var[0]
         
         ## store genotypes for a variant for each caller
         callerGenotypes = dict()
@@ -122,7 +117,6 @@ def main():
         infoFields = dict()
         
         for table in vcfTables:
-
             cur.execute("SELECT * FROM %s WHERE varID='%s'" % (table, var))       
             row = cur.fetchone()
             callerGenotypes[table] = row
