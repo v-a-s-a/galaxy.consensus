@@ -6,7 +6,31 @@
 ##  * plink imendel
 ##  * plink lmendel
 
+### LIBRARIES ###
+#################
+
 library(ggplot2)
+
+
+### FUNCTIONS ###
+#################
+
+## return vecotr of locus missingness
+strip.lmiss <- function(fname) {
+    dat <- read.table(fname, header=T)
+    return( dat$F_MISS )
+}
+
+## return branch name
+strip.branch.name <- function(fname) {
+    tmp <- tail(unlist(strsplit(fname,'/')), 1)
+    name <- head(unlist(strsplit(tmp, '\\.')), 1)
+    return(name)
+}
+
+
+### INPUTS ###
+##############
 
 atlas.base <-
 '/nas40t0/vasya/consensus_call/galaxy.consensus/ts_exomes_data/atlas_exome_chrid_sm.vcf'
@@ -19,19 +43,9 @@ consensus.base <-
 
 bases <- c(atlas.base, freebayes.base, gatk.base, consensus.base)
 
-## locus missingness
-strip.lmiss <- function(fname) {
-    dat <- read.table(fname, header=T)
-    return( dat$F_MISS )
-}
 
-strip.branch.name <- function(fname) {
-    tmp <- tail(unlist(strsplit(fname,'/')), 1)
-    name <- head(unlist(strsplit(tmp, '\\.')), 1)
-    return(name)
-}
 
-##missingness spectra
+## calculate missingness spectra
 lmiss <- c()
 for (i in seq_along(bases)) {
     branch.name <- strip.branch.name(bases[i])
