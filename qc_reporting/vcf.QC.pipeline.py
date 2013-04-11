@@ -28,13 +28,13 @@ import subprocess as sp
 
 
 ## CLASSES
-class report():
+class vcfReport():
     '''
     A quality report generated from the vcf file.
     '''
 
     def __init__(self, vcfFile):
-        self.vcfReader = vcf.Reader(vcfFile)
+        self.vcfReader = vcf.Reader(vcfFile, strict_whitespace=True)
         #: number of transitions
         self.ts = 0
         #: list of MAF
@@ -44,22 +44,23 @@ class report():
         self.sampleConsenRate = list()
         #: list of site consensus-calling rates
         self.siteConsenRate = list()
+        #: total number of called genotypes
+        self.genotypesCalled = 0
         #: {sample ID : sample # of calls}
         self.sampleCallTotal = dict()
-        for sample in vcfReader.samples:
-            sampleCallTotal[sample] = 0
+        for sample in self.vcfReader.samples:
+            self.sampleCallTotal[sample] = 0
         
+        ## go ahead an generate the report upon initialization
+        self.__generateReport()
 
 
-    def generateReport(self):
+    def __generateReport(self):
         '''
-        Iterate and process through records in the vcf file.
+        Iterate and process records in the vcf file.
         '''
         for record in self.vcfReader:
             self.__processRecord(record)
-
-        
-
 
     def __processRecord(self, record):
         '''
@@ -75,18 +76,17 @@ class report():
             * minor allele frequency
         '''
 
-        ## sample called genotypes
-        for sample in record.samples:
-            if record.genotype[sample]:
-                ##genotype is called
-                self.sampleCallTotal[sample] += 1
+        ## find samples with called genotypes
+        #print self.sampleCallTotal
+        #print record.num_called
+        self.genotypesCalled += record.num_called
             
         ## is site a transition variant?
-        if record.is_transition():
+        if record.is_transition:
             self.ts += 1
 
         ## calculate and record maf
-        if record.get_hom_refs() =< record.get_hom_alts():
+        if record.get_hom_refs() <= record.get_hom_alts():
             maf = record.aaf
         else:
             maf  = 1.0 - record.aaf
@@ -110,18 +110,30 @@ def main():
     (options, args) = parser.parse_args()
     vcfFile = options.vcfFile    
 
-    ## open connection to vcf
-    print vcfFile
-    reader = vcf.Reader(open(vcfFile), compressed = True)
+    ## create a QC report object
+    qcreport = vcfReport(open(vcfFile, 'r'))
 
+    ## TODO :: we want to wrap this in a nice PDF report
+    ## potential libraries:
+    ##  - sphinx
+    ##  - pod
+    ##  - reportLab
 
-    for rec in reader:
-        print rec.get_unknowns()
-        print 'Call rate: %s' % rec.call_rate
-        print 'Unknown genotypes: %s' % rec.num_unknown
-        print 'Number of heterozygous calls: %i' % rec.num_het
-        print 'Total number called: %i' % rec.num_called
-        print 'Is transition: %r' % rec.is_transition
+#    ## open connection to vcf
+#    print vcfFile
+#    reader = vcf.Reader(open(vcfFile), compressed = True)
+#
+#
+#    for rec in reader:
+#
+#        ## process record. update aggregate metrics
+#
+#        print rec.get_unknowns()
+#        print 'Call rate: %s' % rec.call_rate
+#        print 'Unknown genotypes: %s' % rec.num_unknown
+#        print 'Number of heterozygous calls: %i' % rec.num_het
+#        print 'Total number called: %i' % rec.num_called
+#        print 'Is transition: %r' % rec.is_transition
 
 if __name__ == "__main__":
     main()
