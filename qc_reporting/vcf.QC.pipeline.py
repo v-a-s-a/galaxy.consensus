@@ -25,7 +25,8 @@ programs used:
 import vcf
 import optparse as opt
 import subprocess as sp
-
+import numpy as np
+import sys
 
 ## CLASSES
 class vcfReport():
@@ -33,23 +34,25 @@ class vcfReport():
     A quality report generated from the vcf file.
     '''
 
-    def __init__(self, vcfFile):
-        self.vcfReader = vcf.Reader(vcfFile, strict_whitespace=True)
+    def __init__(self, vcfFile, mvar):
+        self.vcfReader = vcf.Reader(open(vcfFile, 'r'))
+        self.nsam = len(self.vcfReader.samples)
+        self.mvar = mvar
+        self.vcfFile = vcfFile
         #: number of transitions
         self.ts = 0
+        #: number of transversions
+        self.tv = 0
         #: list of MAF
-        self.mafDist = list()
-        #: number of missing
-        #: list sample consensus-calling rate
-        self.sampleConsenRate = list()
+        self.mafDist = np.empty( self.mvar, dtype=float)
+        #: list of call rates
+        self.callrateDist = np.empty( self.mvar, dtype=float)
         #: list of site consensus-calling rates
-        self.siteConsenRate = list()
+        self.siteConsRate = np.empty( self.mvar, dtype=float)
         #: total number of called genotypes
         self.genotypesCalled = 0
         #: {sample ID : sample # of calls}
-        self.sampleCallTotal = dict()
-        for sample in self.vcfReader.samples:
-            self.sampleCallTotal[sample] = 0
+        self.sampleCallTotal = np.zeros( (self.nsam, 1), dtype=int)
         
         ## go ahead an generate the report upon initialization
         self.__generateReport()
@@ -58,11 +61,28 @@ class vcfReport():
     def __generateReport(self):
         '''
         Iterate and process records in the vcf file.
+        Calculate mendelian errors using PLINK.
         '''
-        for record in self.vcfReader:
-            self.__processRecord(record)
+        for i, record in enumerate(self.vcfReader):
+            self.__processRecord(record, i)
 
-    def __processRecord(self, record):
+        self.__findMendelErrors()
+
+    def findMendelErrors(self):
+      '''
+      Reformat VCF as plink files, and add pedigree information.
+      Calculate the rates of mendelian errors from there.
+      
+      Inputs:
+          - output directory for intermediate files
+          - file mapping SM to RG for our samples
+          - file containing pedigree information
+
+      '''
+      
+
+
+    def __processRecord(self, record, recidx):
         '''
         Update sample level statistics:
             * total number of called genotypes
@@ -76,42 +96,68 @@ class vcfReport():
             * minor allele frequency
         '''
 
-        ## find samples with called genotypes
-        #print self.sampleCallTotal
-        #print record.num_called
+
+        ## per sample totals
+        consCount = 0
+        for idx, sample in enumerate(record.samples):
+          ## check if genotype is called
+          if sample.gt_type:
+              self.sampleCallTotal[idx] += 1
+          ## check if genotype was called consensus
+          if getattr(sample.data ,'CN') == 'T':
+              consCount += 1
+
+        ## global call total
         self.genotypesCalled += record.num_called
             
         ## is site a transition variant?
         if record.is_transition:
             self.ts += 1
+        else:
+            self.tv += 1
 
         ## calculate and record maf
         if record.get_hom_refs() <= record.get_hom_alts():
             maf = record.aaf
         else:
             maf  = 1.0 - record.aaf
-        self.mafDist.append(maf)
+        self.mafDist[recidx] = maf
 
         ## calculate and record missingness per variant
+        self.callrateDist[recidx] = record.call_rate
 
-        ## calculate and record mendelian errors for each call
+        ## if consensus rate is available -- record a consensus rate
+        self.siteConsRate[recidx] = consCount / record.num_called
         
 
+### FUNCTIONS ###
+#################
 
-## FUNCTIONS
+## quickly find the number of samples in a vcf
+def num_variants():
+    ## grep -v '^#' test.consensus.vcf | wc -l
+    return Null 
 
-## MAIN
+## quickly find the number of variants in a vcf
+def num_samples(vcfReader):
+    return len(vcfReader.samples)
+
+
+### MAIN ###
+############
 
 def main():
 
     ## parse input arguments
     parser = opt.OptionParser()
     parser.add_option('--vcf', dest = 'vcfFile', help = 'Target VCF file.')
+    parser.add_option('--num-variants', dest = 'mvar', help = 'Number of variants in target VCF file.')
     (options, args) = parser.parse_args()
     vcfFile = options.vcfFile    
+    mvar = int(options.mvar)
 
     ## create a QC report object
-    qcreport = vcfReport(open(vcfFile, 'r'))
+    qcreport = vcfReport(vcfFile, mvar)
 
     ## TODO :: we want to wrap this in a nice PDF report
     ## potential libraries:
@@ -119,21 +165,6 @@ def main():
     ##  - pod
     ##  - reportLab
 
-#    ## open connection to vcf
-#    print vcfFile
-#    reader = vcf.Reader(open(vcfFile), compressed = True)
-#
-#
-#    for rec in reader:
-#
-#        ## process record. update aggregate metrics
-#
-#        print rec.get_unknowns()
-#        print 'Call rate: %s' % rec.call_rate
-#        print 'Unknown genotypes: %s' % rec.num_unknown
-#        print 'Number of heterozygous calls: %i' % rec.num_het
-#        print 'Total number called: %i' % rec.num_called
-#        print 'Is transition: %r' % rec.is_transition
 
 if __name__ == "__main__":
     main()
