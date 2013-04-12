@@ -96,10 +96,30 @@ def store_vcf(vcfFile, tableName, dbCon):
             cur.execute("INSERT INTO %s VALUES(%s)" % (tableName, parSub), varRec)
                 
 
-
-def genoConsensus(genoList):
+def is_het(g):
     '''
-    Create consensus of hard call genotypes:
+    Check if hardcall genotype is heterozygous
+    '''
+    if g=='1/0' or g=='0/1': return True
+    else: return False
+
+def is_hom_ref(g):
+    '''
+    Check if hardcall genotype is homozygous reference
+    '''
+    if g=='0/0': return True
+    else: return False
+
+def is_hom_alt(g):
+    '''
+    Check if hardcall genotype if homozygous alternative
+    '''
+    if g=='1/1': return True
+    else: return False
+
+def loose_consensus(genoList):
+    '''
+    Call consensus if genotype is concordant among 2/3 callers.
 
     @genoList: a list of genotypes in the format '0/1', with missing as '.'
     @return: return a hard call of the genotype. */* if no consensus.
@@ -118,3 +138,28 @@ def genoConsensus(genoList):
     else:
         ## no values aggree
         return '*/*'
+
+
+def strict_consensus(genoList):
+    '''
+    Call consensus if genotype is concordant among 3/3 callers.
+
+    @genoList: a list of genotypes in the format '0/1', with missing as '.'
+    @return: return a hard call of the genotype. */* if no consensus.
+
+    '''
+
+    if reduce(lambda x,y: x and y, map(is_het, genoList)):
+        ## all genotypes are heterozygous
+        return '0/1'
+    elif reduce(lambda x,y: x and y, map(is_hom_ref, genoList)):
+        ## all genotypes are homozygous reference
+        return '0/0'
+    elif reduce(lambda x,y: x and y, map(is_hom_alt, genoList)):
+        ## all genotypes are homozygous alternative
+        return '1/1'        
+    else:
+        ## no genotypes are concordant
+        return '*/*'
+
+
