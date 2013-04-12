@@ -25,9 +25,6 @@ from pyVCF_record import _Record, _AltRecord, _Substitution
 from consensus_functions import *
 
 
-#vcfFiles = ['data/ATLAS.merged.ontarget.chr22.SM.vcf',
-#    'data/GATK.multisample.ontarget.chr22.vcf.recode.vcf',
-#    'data/freebayes.chr22.multisample.ontarget.vcf.recode.vcf']
 
 
 def main():
