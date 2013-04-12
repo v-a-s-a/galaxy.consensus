@@ -40,7 +40,9 @@ def main():
     parser.add_option('--freebayes-vcf', dest = 'freebayesVcf', action = 'store',
         help = 'Location of freebayes vcf file for consensus.')
     parser.add_option('--db-file', dest = 'dbFile', action = 'store',
-        help = 'Location of file for sqlite db')
+        help = 'Location of file for sqlite db.')
+    parser.add_option('--consensus-thresh', dest = 'consThresh', action = 'store',
+        help = 'The number of callers required for consensus.')
     (options, args) = parser.parse_args()
 
 
@@ -70,25 +72,40 @@ def main():
     vcfCols = {'varID':1, 'chr':1, 'pos':1, 'REF':1, 'ALT':1, 'QUAL':1, 'FILTER':1, 'INFO':1}
     commonSam = [ x for x in commonSam if not vcfCols.get(x)  ]
 
-    ## get IDs of snps common to all sets
-    varquery = 'SELECT a.varID FROM\
-            atlas AS a\
-            JOIN freebayes AS f ON a.varID=f.varID\
-            JOIN gatk as g ON a.varID=g.varID'
+    
+    if options.consThresh == '3':
+        ## get IDs of snps common to all sets
+        varquery = 'SELECT a.varID FROM \
+                    atlas AS a \
+                    JOIN freebayes AS f ON a.varID=f.varID \
+                    JOIN gatk as g ON a.varID=g.varID'
+    elif options.consThresh == '2':
+        ## get IDs of snps in at least 2/3 sets
+        varquery = 'SELECT a.varID FROM atlas AS a \
+                        JOIN freebayes AS f ON a.varID=f.varID \
+                    UNION \
+                    SELECT f.varID FROM freebayes AS f \
+                        JOIN gatk AS g ON f.varID=g.varID \
+                    UNION \
+                    SELECT a.varID FROM atlas AS a \
+                        JOIN gatk AS g ON a.varID=g.varID'
+
+    ## pull IDs from database
     cur.execute(varquery)
     commonVar = cur.fetchall() 
+
 
     print 'Calling consensus genotypes for each variant.'
     ## create consensus table in db
     cur.execute("DROP TABLE IF EXISTS consensus")
     colTemplate = ['varID TEXT',
-        'chr TEXT',
-        'pos INTEGER',
-        'REF TEXT',
-        'ALT TEXT',
-        'QUAL TEXT',
-        'FILTER TEXT',
-        'INFO TEXT']
+                'chr TEXT',
+                'pos INTEGER',
+                'REF TEXT',
+                'ALT TEXT',
+                'QUAL TEXT',
+                'FILTER TEXT',
+                'INFO TEXT']
     types = [ 'TEXT' for sam in commonSam ]
     samples = [ '"' + sam + '"' for sam in commonSam  ]
     samCol = [ ' '.join(pair) for pair in zip(samples, types) ]
@@ -116,17 +133,23 @@ def main():
         for table in vcfTables:
             cur.execute("SELECT * FROM %s WHERE varID='%s'" % (table, var))       
             row = cur.fetchone()
-            callerGenotypes[table] = row
-            
-            ## we should check whether chr, pos, ref, alt match here
-            chr.append(row['chr'])
-            pos.append(row['pos'])
-            ref.append(row['ALT'])
-            alt.append(row['REF'])
+            if row:
+                ## variant was observed by this algorithm
+                callerGenotypes[table] = row
+                
+                ## we should check whether chr, pos, ref, alt match here
+                chr.append(row['chr'])
+                pos.append(row['pos'])
+                ref.append(row['ALT'])
+                alt.append(row['REF'])
 
-            ## store QUAL scores
-            infoFields[table] = row['QUAL']
-        
+                ## store QUAL scores
+                infoFields[table] = row['QUAL']
+            else:
+                ## variant was NOT observed by the algorithm
+                infoFields[table] = '-'
+                callerGenotypes[table] = dict( zip(commonSam, [ None for x in commonSam]) )
+
         ## TODO this should be guaranteed upstream!
         ## uniquify and check that all values that should match, match
         chr = set(chr)
@@ -163,8 +186,11 @@ def main():
             ## dict access of row is much faster
             ## store genotype for each sample in consensus table
             genoSet = [ callerGenotypes[table][str(sam).strip('"')] for table in vcfTables ]
-            genotypeField = genoConsensus(genoSet)
-            
+            if options.consThresh == '3':
+                genotypeField = strict_consensus(genoSet)
+            elif options.consThresh == '2':
+                genotypeField = loose_consensus(genoSet)
+        
             ## TODO :: handle missing data more intelligently
             if not genotypeField:
                  genotypeField = './.'
