@@ -63,8 +63,9 @@ plt <- ggplot(miss.df, aes(x=missf, fill=dataset)) +
   scale_fill_manual(values=c("blue","green","red","orange"))
 show(plt)
 
+
+## calculate locus MAF spectrum
 mafs <- c()
-## locus MAF spectrum
 for (i in seq_along(bases)) {
     branch.name <- strip.branch.name(bases[i])
     file.path <- tmpFile <- paste(bases[i], '.frq', sep='')
