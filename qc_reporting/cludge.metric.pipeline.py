@@ -61,29 +61,25 @@ def main():
         intermedBase + '.tstv']
     tstvCall = smart_vcftools(tstvCall)
     #print ' '.join(tstvCall)
-    sp.call(tstvCall)
+    #sp.call(tstvCall)
 
-    ## get the missingness rates
-    missCall = ['vcftools', '--vcf', vcfFile, '--missing', '--out', intermedBase]
-    missCall = smart_vcftools(missCall)
-    #print ' '.join(missCall)
-    sp.call(missCall)
 
-    ### mendelian errors using plink
 
     ## convert vcf to plink formatted files
     convertCall = ['vcftools', '--vcf', vcfFile, '--plink', '--recode', '--out',
         intermedBase]
     convertCall = smart_vcftools(convertCall)
-    sp.call(convertCall)
+    #sp.call(convertCall)
 
     ## store mapping of SM to RG
     rg_sm = dict()
+    sm_rg = dict()
     fconn = smart_open(sampleKeyFile)
     header = fconn.next()
     for line in fconn:
        line = line.split(',')
-       rg_sm[line[1]]  = line[0]
+       rg_sm[line[1]] = line[0]
+       sm_rg[line[0]] = line[1]  
     fconn.close()
 
     ## add pedigree information to plink ped file file
@@ -129,7 +125,12 @@ def main():
     with smart_open(intermedBase + '.ped') as plinkFile:
         for line in plinkFile:
             line = line.strip().split('\t')
-            iid = line[1]
+            ## convert ID from RG to SM if necessary
+            if rg_sm.get(line[1]):
+              iid = rg_sm[line[1]]
+              line[1] = iid
+            else:
+              iid = line[1]
             if fathers.get(iid):
                 line[2] = fathers[iid]
             if mothers.get(iid):
@@ -150,7 +151,7 @@ def main():
         '--mendel',
         '--allow-no-sex',
         '--out', intermedBase]
-    sp.call(mendelCall)# stdout = devnull, stderr = devnull)
+    #sp.call(mendelCall)# stdout = devnull, stderr = devnull)
 
     ## generate minor allele frequency distribution
     mafCall = ['plink',
@@ -159,7 +160,16 @@ def main():
     '--freq',
     '--allow-no-sex',
     '--out', intermedBase]
-    sp.call(mafCall)
+    #sp.call(mafCall)
+
+    
+    ## get the missingness rates
+    missCall = ['plink',
+    '--ped', newPlinkFile,
+    '--map', intermedBase + '.map',
+    '--missing',
+    '--out', intermedBase]
+    sp.call(missCall)
 
     devnull.close()
 
