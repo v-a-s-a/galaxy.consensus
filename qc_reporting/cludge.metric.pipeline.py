@@ -70,6 +70,12 @@ def main():
         intermedBase]
     convertCall = smart_vcftools(convertCall)
     #sp.call(convertCall)
+    
+    ## extract qual scores from INFO field
+    qualCall = ['vcftools', '--vcf', vcfFile,
+    '--get-INFO', 'AQ', '--get-INFO', 'GQ', '--get-INFO', 'FQ',
+    '--out', intermedBase]
+    sp.call(smart_vcftools(qualCall))
 
     ## store mapping of SM to RG
     rg_sm = dict()
@@ -169,7 +175,17 @@ def main():
     '--map', intermedBase + '.map',
     '--missing',
     '--out', intermedBase]
-    sp.call(missCall)
+    #sp.call(missCall)
+
+
+    ## get hardy weinberg estimates
+    hweCall = ['plink',
+    '--ped', newPlinkFile,
+    '--map', intermedBase + '.map',
+    '--hardy',
+    '--out', intermedBase]
+    #sp.call(hweCall)
+
 
     devnull.close()
 
