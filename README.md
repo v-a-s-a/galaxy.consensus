@@ -1,19 +1,15 @@
-galaxy.consensus Introduction:
+Introduction:
 ==============================
 
-This is a first pass implementation for a consensus caller that merges
-output VCF files from ATLAS SNP2, freebayes, and GATK Unified Genotyper.
+An initial implementation of a consensus calling algorithm, and a variant quality/summary report.
 
-This repo contains a tool appropriate for incorporation into Galaxy.
 
-Options:
-========
-    -h, --help                        show this help message and exit
-    --out=BASEOUT                     File path base for output of .vcf and .log files.
-    --atlas-vcf=ATLASVCF              Location of ATLAS vcf file for consensus.
-    --gatk-vcf=GATKVCF                Location of GATK vcf file for consensus.
-    --freebayes-vcf=FREEBAYESVCF      Location of freebayes vcf file for consensus.
-    --db-file=DBFILE                  Location of file for sqlite db
+Currently, the tools supports the following callers:
+  - GATK Unified Genotyper
+  - Freebayes
+  - Atlas-SNP2
+
+
 
 
 Dependencies:
@@ -25,10 +21,16 @@ parser.
 A cloned copy exists in lib/, otherwise:
 https://github.com/jamescasbon/PyVCF.git
 
-You can do the standard python install by running from ./lib/PyVCF:
 
-    python setup.py build
-    python setup.py install
+
+Options:
+========
+    -h, --help                        show this help message and exit
+    --out=BASEOUT                     File path base for output of .vcf and .log files.
+    --atlas-vcf=ATLASVCF              Location of ATLAS vcf file for consensus.
+    --gatk-vcf=GATKVCF                Location of GATK vcf file for consensus.
+    --freebayes-vcf=FREEBAYESVCF      Location of freebayes vcf file for consensus.
+    --db-file=DBFILE                  Location of file for sqlite db
 
 
 Example:
@@ -45,7 +47,7 @@ To run the test data, try:
       --db-file mktemp
 
 
-This should produce a file:
+This produces a file:
 #### TEST.vcf
 Contains consensus genotypes for variants and samples that match between all
 three input vcf files.
