@@ -24,8 +24,8 @@ for path, dir, files in os.walk(BAMdir):
             sm_to_rg[sm] = rg
             sm_to_rg[rg] = sm
 
-oldvcfFile = open('ts_exomes_data/atlas_exome_chrid.vcf')
-newvcfFile = open('ts_exomes_data/atlas_exome_chrid_sm.vcf', 'w')
+oldvcfFile = open('ts_exomes_data/atlas_branch/atlas_exome_bed_v1.4.3_allsamples.vcf')
+newvcfFile = open('ts_exomes_data/atlas_branch/tlas_exome_bed_v1.4.3_allsamples_sm.vcf', 'w')
 
 line = oldvcfFile.next()
 newvcfFile.write(line)
@@ -35,7 +35,7 @@ while not line.startswith('#CHROM'):
 
 newheader = []
 for f in line.split():
-  f = f.rstrip('.bam.snp.vcf')
+  f = f.rstrip('.vcf')
   if sm_to_rg.get(f):
     newheader.append(sm_to_rg[f])
   else:
