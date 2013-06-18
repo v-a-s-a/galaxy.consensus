@@ -21,7 +21,7 @@ def store_vcf(vcfFile, tableName, dbCon):
 
    db table format:
         -row is variant
-        -col for varID s chr_pos
+        -col for varID is chr_pos_ref_alt
         -col for chromosome
         -col for position
         -col for REF allele
@@ -80,7 +80,7 @@ def store_vcf(vcfFile, tableName, dbCon):
 
  
             ## create build a record for the variant
-            varRec = [ rec.CHROM + '_' + str(rec.POS),
+            varRec = [ '_'.join([rec.CHROM, str(rec.POS), rec.REF, str(rec.ALT[0])]),
                 rec.CHROM,
                 rec.POS,
                 rec.REF,
