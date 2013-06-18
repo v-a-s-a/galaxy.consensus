@@ -1,19 +1,25 @@
+import sqlite3 as sql
+import vcf as pyvcf
 
 class genotyper:
-'''
-Genotyper object:
+  '''
+  Genotyper object:
 
-Parses VCF files into database.
-Calls consensus variants and genotypes
-Writes consensus VCF to file
-'''
+  Parses VCF files into database.
+  Calls consensus variants and genotypes
+  Writes consensus VCF to file
+  '''
 
-  def __init__(self, sqliteConnection, atlasVCF, gatkVCF, freebayesVCF):
+
+
+  def __init__(self, *args, **kwargs):
     
-    self.sqliteConnection = sqliteConnection
-    self.atlasVCF = atlasVCF
-    self.gatkVCF = gatkVCF
-    self.freebayesVCF = freebayesVCF
+    self.sqliteConnection = kwargs.pop('sqliteConnection', None)
+    self.atlasVCF = kwargs.pop('atlasVCF', None)
+    self.gatkVCF = kwargs.pop('gatkVCF', None)
+    self.freebayesVCF = kwargs.pop('freebayesVCF', None)
+
+    self.vcfTables = ['atlas', 'freebayes', 'gatk']
 
     ## add vcf files to database
     self.store_vcf(vcf=self.atlasVCF, source='atlas')
@@ -21,7 +27,7 @@ Writes consensus VCF to file
     self.store_vcf(vcf=self.atlasVCF, source='freebayes')
 
 
-  def store_vcf(vcf, source)
+  def store_vcf(self, vcf, source):
     '''
     Inputs:
     @vcf: the file path for the vcf file to source
@@ -40,7 +46,7 @@ Writes consensus VCF to file
     '''
 
     ## initialize vcf parser
-    reader = vcfMod.Reader(open(vcfFile, 'r'))
+    reader = pyvcf.Reader(open(vcf, 'r'))
 
 
     ## form columns for addition into table
@@ -64,8 +70,8 @@ Writes consensus VCF to file
         cur = self.sqliteConnection.cursor()
 
         ## initialize db table
-        cur.execute("DROP TABLE IF EXISTS %s" % tableName)
-        cur.execute("CREATE TABLE %s(%s);" % (tableName, template))
+        cur.execute("DROP TABLE IF EXISTS %s" % source)
+        cur.execute("CREATE TABLE %s(%s);" % (source, template))
 
        # for rec in reader:        
 
@@ -76,9 +82,9 @@ Writes consensus VCF to file
             except StopIteration:
                 break
             except ValueError:
-                tableSize = cur.execute("SELECT varID from %s" % tableName)
+                tableSize = cur.execute("SELECT varID from %s" % source)
                 tableSize = str(len(tableSize.fetchall()))
-                print '# of variants inserted into %s: %s' % (tableName, tableSize)                
+                print '# of variants inserted into %s: %s' % (source, tableSize)                
             
             ## skip multi-nucleotide polymorphisms
             if len(rec.ALT) > 1:
@@ -98,16 +104,21 @@ Writes consensus VCF to file
 
             ## insert into db
             parSub = ','.join( tuple('?'*len(varRec)) )
-            cur.execute("INSERT INTO %s VALUES(%s)" % (tableName, parSub), varRec)
+            cur.execute("INSERT INTO %s VALUES(%s)" % (source, parSub), varRec)
 
 
-  def call_consensus(self, consThresh=3):
+
+
+  def call_consensus(self, consThresh='3'):
     '''
     Reduce variant tables into consensus table.
     '''
+
+    cur = self.sqliteConnection.cursor()
+
     # get IDs of samples common to all sets
     names = list()
-    for table in vcfTables:
+    for table in self.vcfTables:
         colq = cur.execute( 'SELECT * from %s' % table )
         names.append(set(map(lambda x: x[0], colq.description)))
     commonSam = reduce(lambda x,y: x.intersection(y), names )
@@ -154,8 +165,8 @@ Writes consensus VCF to file
     cur.execute("CREATE TABLE consensus(%s)" % template )
 
     ## swicth to dict cursor for fast row access
-    con.row_factory = sql.Row
-    cur = con.cursor()
+    self.sqliteConnection.row_factory = sql.Row
+    cur = self.sqliteConnection.cursor()
 
      ## pull sample genotypes for each variant
     for idx, var in enumerate(commonVar):
@@ -169,7 +180,7 @@ Writes consensus VCF to file
         ref = list()
         infoFields = dict()
 
-        for table in vcfTables:
+        for table in self.vcfTables:
             cur.execute("SELECT * FROM %s WHERE varID='%s'" % (table, var))
             row = cur.fetchone()
             if row:
@@ -216,7 +227,7 @@ Writes consensus VCF to file
 
             ## dict access of row is much faster
             ## store genotype for each sample in consensus table
-            genoSet = [ callerGenotypes[table][str(sam).strip('"')] for table in vcfTables ]
+            genoSet = [ callerGenotypes[table][str(sam).strip('"')] for table in self.vcfTables ]
             if consThresh == '3':
                 genotypeField = strict_consensus(genoSet)
             elif consThresh == '2':
@@ -238,6 +249,16 @@ Writes consensus VCF to file
     '''
     Write consensus VCF out to file.
     '''
+
+    cur = self.sqliteConnection.cursor()
+
+    names = list()
+    for table in self.vcfTables:
+        colq = cur.execute( 'SELECT * from %s' % table )
+        names.append(set(map(lambda x: x[0], colq.description)))
+    commonSam = reduce(lambda x,y: x.intersection(y), names )
+    vcfCols = {'varID':1, 'chr':1, 'pos':1, 'REF':1, 'ALT':1, 'QUAL':1, 'FILTER':1, 'INFO':1}
+    commonSam = [ x for x in commonSam if not vcfCols.get(x)  ]
 
     vcfCon = open(vcfOut, 'w')
     print >> vcfCon, '##fileformat=VCFv4.0'
