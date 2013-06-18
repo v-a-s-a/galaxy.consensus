@@ -32,15 +32,15 @@ qual.plot <- function(fpath, name){
 ##############
 
 atlas.base <-
-'/nas40t0/vasya/consensus_call/galaxy.consensus/ts_exomes_qc/atlas_exonBed_filter/atlas_exome_bed' 
+'/nas40t0/vasya/consensus_call/galaxy.consensus/ts_exomes_qc/atlas_exonBed_v1.4.3_allsamples_flat/atlas_exome_bed_v1.4.3_allsamples_flat' 
 freebayes.base <-
 '/nas40t0/vasya/consensus_call/galaxy.consensus/ts_exomes_qc/freebayes_exonBed_filter/freebayes_03-25_exome_bed'
 gatk.base <-
 '/nas40t0/vasya/consensus_call/galaxy.consensus/ts_exomes_qc/gatk_exonBed_filter/gatk_05-05_exome_bed'
 loose.consensus.base <-
-'/nas40t0/vasya/consensus_call/galaxy.consensus/ts_exomes_qc/loose_consensus_exonBed/consensus.loose.exonBed'
+'/nas40t0/vasya/consensus_call/galaxy.consensus/ts_exomes_qc/loose_exonBed_v1.4.3_flat/consensus.loose.exonBed.atlas1.4.3.allsamples.flat'
 strict.consensus.base <-
-'/nas40t0/vasya/consensus_call/galaxy.consensus/ts_exomes_qc/strict_consensus_exonBed/consensus.strict.exonBed'
+'/nas40t0/vasya/consensus_call/galaxy.consensus/ts_exomes_qc/strict_exonBed_v1.4.3_flat/consensus.strict.exonBed.atlas1.4.3.allsamples.flat'
 
 bases <- c(atlas.base, freebayes.base, gatk.base, strict.consensus.base,
   loose.consensus.base)
@@ -111,8 +111,9 @@ for (i in seq_along(bases)) {
 #plt2 <- ggplot(miss.df, aes(x=missf, color=dataset)) + stat_ecdf(geom="smooth")
 #show(plt2)
 
-readline()
-plt2 <- ggplot(miss.df, aes(x=missf, fill=dataset)) + geom_histogram() +
+#readline()
+plt2 <- ggplot(miss.df, aes(x=missf, fill=dataset)) +
+geom_histogram(binwidth=0.01) +
     facet_grid(dataset~.) + labs(title="Missingness Spectra",
         xlab="rate of missing genotypes")
 show(plt2)
@@ -131,50 +132,56 @@ show(plt2)
 #show(plt)
 
 readline()
-plt <- ggplot(maf.df, aes(x=maf, fill=dataset)) + geom_histogram() +
+plt <- ggplot(maf.df, aes(x=maf, fill=dataset)) +
+geom_histogram(binwidth=0.005) +
     facet_grid(dataset~.) + labs(title="Minor Allele Frequency Distributions",
         x="maf")
 show(plt)
 
-## separate out individual data sets
-readline()
-## this was an attempt to reweight the densities by number of variants
+### separate out individual data sets
+#readline()
+### this was an attempt to reweight the densities by number of variants
+##plt <- ggplot(maf.df, aes(x=maf, color=dataset)) +
+##    geom_density(data=subset(maf.df, dataset=='freebayes'), adjust=8,
+##      weights=1/length(which(maf.df$dataset=='freebayes'))) +
+##    geom_density(data=subset(maf.df, dataset=='atlas'), adjust=0.5,
+##      weights=1/length(which(maf.df$dataset=='atlas'))) +
+##    geom_density(data=subset(maf.df, dataset=='gatk'), adjust=0.5,
+##      weights=1/length(which(maf.df$dataset=='gatk'))) +
+##    geom_density(data=subset(maf.df, dataset=='strict'), adjust=1,
+##      weights=1/length(which(maf.df$dataset=='strict'))) +
+##    geom_density(data=subset(maf.df, dataset=='loose'), adjust=0.5,
+##      weights=1/length(which(maf.df$dataset=='loose'))) 
 #plt <- ggplot(maf.df, aes(x=maf, color=dataset)) +
 #    geom_density(data=subset(maf.df, dataset=='freebayes'), adjust=8,
-#      weights=1/length(which(maf.df$dataset=='freebayes'))) +
+#binwidth=0.01) +
 #    geom_density(data=subset(maf.df, dataset=='atlas'), adjust=0.5,
-#      weights=1/length(which(maf.df$dataset=='atlas'))) +
+#binwidth=0.01) +
 #    geom_density(data=subset(maf.df, dataset=='gatk'), adjust=0.5,
-#      weights=1/length(which(maf.df$dataset=='gatk'))) +
+#binwidth=0.01) +
 #    geom_density(data=subset(maf.df, dataset=='strict'), adjust=1,
-#      weights=1/length(which(maf.df$dataset=='strict'))) +
+#binwidth=0.01) +
 #    geom_density(data=subset(maf.df, dataset=='loose'), adjust=0.5,
-#      weights=1/length(which(maf.df$dataset=='loose'))) 
-plt <- ggplot(maf.df, aes(x=maf, color=dataset)) +
-    geom_density(data=subset(maf.df, dataset=='freebayes'), adjust=8) +
-    geom_density(data=subset(maf.df, dataset=='atlas'), adjust=0.5) +
-    geom_density(data=subset(maf.df, dataset=='gatk'), adjust=0.5) +
-    geom_density(data=subset(maf.df, dataset=='strict'), adjust=1) +
-    geom_density(data=subset(maf.df, dataset=='loose'), adjust=0.5) 
-show(plt)
-
-## experimental ecdf representation
-readline()
-plt2 <- ggplot(maf.df, aes(x=maf, color=dataset)) + stat_ecdf(geom="smooth") +
-    labs(title="Minor Allele Frequency Cumulative Distribution Function")
-show(plt2)
+#binwidth=0.01) 
+#show(plt)
+#
+### experimental ecdf representation
+#readline()
+#plt2 <- ggplot(maf.df, aes(x=maf, color=dataset)) + stat_ecdf(geom="smooth") +
+#    labs(title="Minor Allele Frequency Cumulative Distribution Function")
+#show(plt2)
 
 ## ts/tv
 readline()
 tstv.df <- data.frame(dataset=base.names, tstv=unlist(tstv.dat) )
-plt <- ggplot(tstv.df, aes(y=tstv, x=dataset)) + geom_bar() +
+plt <- ggplot(tstv.df, aes(y=tstv, x=dataset, fill=dataset)) + geom_bar() +
     labs(title="Ts/Tv Ratio", y="ts/tv ratio")
 show(plt)
 
 ## number of variants
 readline()
 mvar.df <- data.frame(dataset=base.names, mvar=unlist(mvar.dat))
-plt <- ggplot(mvar.df, aes(x=dataset, y=mvar)) + geom_bar() +
+plt <- ggplot(mvar.df, aes(x=dataset, y=mvar, fill=dataset)) + geom_bar() +
     labs(title="Number of Variants", y="number of variants")
 show(plt)
 
@@ -182,7 +189,7 @@ show(plt)
 readline()
 lmendel.df <- data.frame(dataset=base.names,
 lmendel.rate=unlist(lmendel.dat)/unlist(mvar.dat), lmendel=unlist(lmendel.dat))
-plt <- ggplot(lmendel.df, aes(x=dataset, y=lmendel.rate)) + geom_bar() +
+plt <- ggplot(lmendel.df, aes(x=dataset, y=lmendel.rate, fill=dataset)) + geom_bar() +
     labs(title="Mendelian Error Rate", y="mendel error rate")
 show(plt)
 

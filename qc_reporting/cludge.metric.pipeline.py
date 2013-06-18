@@ -49,10 +49,12 @@ def main():
 
     ## identify the total number of variants in the VCF file
     zgrepCall = ['zgrep', '-v', '\'#\'', vcfFile]
+    grepCall = ['grep', '-v', '\'#\'', vcfFile]
     wcCall = ['wc', '-l']
-    zgrep = sp.Popen( zgrepCall, stdout = sp.PIPE )
-    wc = sp.Popen( wcCall, stdin = zgrep.stdout, stdout = sp.PIPE )
-    zgrep.stdout.close()
+    if vcfFile.endswith('gz'): grep = sp.Popen( zgrepCall, stdout = sp.PIPE )
+    else: grep = sp.Popen( grepCall, stdout = sp.PIPE )
+    wc = sp.Popen( wcCall, stdin = grep.stdout, stdout = sp.PIPE )
+    grep.stdout.close()
     nsnp = wc.communicate()[0]
 
 
@@ -61,7 +63,7 @@ def main():
         intermedBase + '.tstv']
     tstvCall = smart_vcftools(tstvCall)
     #print ' '.join(tstvCall)
-    #sp.call(tstvCall)
+    sp.call(tstvCall)
 
 
 
@@ -69,7 +71,7 @@ def main():
     convertCall = ['vcftools', '--vcf', vcfFile, '--plink', '--recode', '--out',
         intermedBase]
     convertCall = smart_vcftools(convertCall)
-    #sp.call(convertCall)
+    sp.call(convertCall)
     
     ## extract qual scores from INFO field
     qualCall = ['vcftools', '--vcf', vcfFile,
@@ -157,7 +159,7 @@ def main():
         '--mendel',
         '--allow-no-sex',
         '--out', intermedBase]
-    #sp.call(mendelCall)# stdout = devnull, stderr = devnull)
+    sp.call(mendelCall)# stdout = devnull, stderr = devnull)
 
     ## generate minor allele frequency distribution
     mafCall = ['plink',
@@ -166,7 +168,7 @@ def main():
     '--freq',
     '--allow-no-sex',
     '--out', intermedBase]
-    #sp.call(mafCall)
+    sp.call(mafCall)
 
     
     ## get the missingness rates
@@ -175,7 +177,7 @@ def main():
     '--map', intermedBase + '.map',
     '--missing',
     '--out', intermedBase]
-    #sp.call(missCall)
+    sp.call(missCall)
 
 
     ## get hardy weinberg estimates
@@ -184,7 +186,7 @@ def main():
     '--map', intermedBase + '.map',
     '--hardy',
     '--out', intermedBase]
-    #sp.call(hweCall)
+    sp.call(hweCall)
 
 
     devnull.close()
