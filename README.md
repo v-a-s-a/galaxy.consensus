@@ -1,39 +1,31 @@
 Introduction:
 ==============================
 
-An initial implementation of a consensus calling algorithm, and a variant quality/summary report.
+This is an initial implementation of a two stage voting scheme among variant calling algorithms. Given a set of VCF files produced by various algorithms, sites are selected if they are seen among all callers. Genotypes among these sites are then selected as those that match among all callers.
 
 
-Currently, the tools supports the following callers:
-  - GATK Unified Genotyper
-  - Freebayes
-  - Atlas-SNP2
+Supported Callers:
 
+  - [GATK Unified Genotyper] (http://www.broadinstitute.org/gatk/)
+  - [Freebayes](https://github.com/ekg/freebayes)
+  - [Atlas-SNP2](http://sourceforge.net/p/atlas2/wiki/Atlas-SNP/)
 
-
-
-Dependencies:
-=============
-
-The major dependency that must be installed on the system is James Casbon's vcf
-parser.
-
-A cloned copy exists in lib/, otherwise:
-https://github.com/jamescasbon/PyVCF.git
 
 
 
 Options:
-========
-    -h, --help                        show this help message and exit
-    --out=BASEOUT                     File path base for output of .vcf and .log files.
-    --atlas-vcf=ATLASVCF              Location of ATLAS vcf file for consensus.
-    --gatk-vcf=GATKVCF                Location of GATK vcf file for consensus.
-    --freebayes-vcf=FREEBAYESVCF      Location of freebayes vcf file for consensus.
-    --db-file=DBFILE                  Location of file for sqlite db
+  -h, --help            show this help message and exit
+  --out=BASEOUT         File path base for output of .vcf and .log files.
+  --atlas-vcf=ATLASVCF  Location of ATLAS vcf file for consensus.
+  --gatk-vcf=GATKVCF    Location of GATK vcf file for consensus.
+  --freebayes-vcf=FREEBAYESVCF
+                        Location of freebayes vcf file for consensus.
+  --db-file=DBFILE      Location of file for sqlite db.
 
 
-Example:
+
+
+Usage:
 ========
 
 Test data is located in the data/ directory.
@@ -41,14 +33,12 @@ Test data is located in the data/ directory.
 To run the test data, try:
 
     consensus.py --out TEST \
-      --atlas-vcf data/ATLAS.merged.ontarget.chr22.SM.vcf \
-      --freebayes-vcf data/freebayes.chr22.multisample.ontarget.vcf.recode.vcf \
-      --gatk-vcf data/GATK.multisample.ontarget.chr22.vcf.recode.vcf \
+      --atlas-vcf data/atlas.small.vcf \
+      --freebayes-vcf data/freebayes.small.vcf \
+      --gatk-vcf data/gatk.small.vcf \
       --db-file mktemp
 
 
-This produces a file:
-#### TEST.vcf
-Contains consensus genotypes for variants and samples that match between all
+This produces a file: TEST.vcf. This Contains consensus genotypes for variants and samples that match between all
 three input vcf files.
 
