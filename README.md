@@ -14,12 +14,12 @@ Supported Callers:
 
 
     Options:
-    -h, --help            show this help message and exit
-    --out                 File path base for output of .vcf and .log files.
-    --atlas-vcf           Location of ATLAS vcf file for consensus.
-    --gatk-vcf            Location of GATK vcf file for consensus.
-    --freebayes-vcf       Location of freebayes vcf file for consensus.
-    --db-file               Location of file for sqlite db.
+      -h, --help            show this help message and exit
+      --out                 File path base for output of .vcf and .log files.
+      --atlas-vcf           Location of ATLAS vcf file for consensus.
+      --gatk-vcf            Location of GATK vcf file for consensus.
+      --freebayes-vcf       Location of freebayes vcf file for consensus.
+      --db-file             Location of file for sqlite db.
 
 
 
