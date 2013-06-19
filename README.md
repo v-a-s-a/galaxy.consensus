@@ -13,7 +13,8 @@ Supported Callers:
 
 
 
-    Options:
+Options:
+========
       -h, --help            show this help message and exit
       --out                 File path base for output of .vcf and .log files.
       --atlas-vcf           Location of ATLAS vcf file for consensus.
