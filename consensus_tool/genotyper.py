@@ -1,30 +1,32 @@
 import sqlite3 as sql
 import vcf as pyvcf
+from consensus_functions import *
 
 class genotyper:
   '''
   Genotyper object:
 
-  Parses VCF files into database.
-  Calls consensus variants and genotypes
-  Writes consensus VCF to file
+  Parses VCF files into database upon init.
+  Calls consensus variants and genotypes.
+  Writes consensus VCF to file.
   '''
-
 
 
   def __init__(self, *args, **kwargs):
     
-    self.sqliteConnection = kwargs.pop('sqliteConnection', None)
-    self.atlasVCF = kwargs.pop('atlasVCF', None)
-    self.gatkVCF = kwargs.pop('gatkVCF', None)
-    self.freebayesVCF = kwargs.pop('freebayesVCF', None)
+    ## identify which callers are being used
+    self.vcfTables = [ f for f in kwargs if 'Vcf' in f ]
+ 
+    ## store VCF file locations
+    self.sqliteConnection = kwargs.get('sqliteConnection', None)
+    self.atlasVCF = kwargs.get('atlasVcf', None)
+    self.gatkVCF = kwargs.get('gatkVcf', None)
+    self.freebayesVCF = kwargs.get('freebayesVcf', None)
 
-    self.vcfTables = ['atlas', 'freebayes', 'gatk']
 
     ## add vcf files to database
-    self.store_vcf(vcf=self.atlasVCF, source='atlas')
-    self.store_vcf(vcf=self.gatkVCF, source='gatk')
-    self.store_vcf(vcf=self.atlasVCF, source='freebayes')
+    for branchVcf in self.vcfTables:
+      self.store_vcf(vcf=kwargs.get(branchVcf), source=branchVcf)
 
 
   def store_vcf(self, vcf, source):
@@ -73,25 +75,15 @@ class genotyper:
         cur.execute("DROP TABLE IF EXISTS %s" % source)
         cur.execute("CREATE TABLE %s(%s);" % (source, template))
 
-       # for rec in reader:        
-
-        ## while loop for debugging record iter in reader
-        while True:
-            try:
-                rec = reader.next()
-            except StopIteration:
-                break
-            except ValueError:
-                tableSize = cur.execute("SELECT varID from %s" % source)
-                tableSize = str(len(tableSize.fetchall()))
-                print '# of variants inserted into %s: %s' % (source, tableSize)                
+        for rec in reader:        
             
             ## skip multi-nucleotide polymorphisms
             if len(rec.ALT) > 1:
+                print '\tNOT PROCESSING MULTI-ALLELIC SITES OR MNPs'
                 continue
 
             ## create build a record for the variant
-            varRec = [ rec.CHROM + '_' + str(rec.POS),
+            varRec = [ rec.CHROM+'_'+str(rec.POS)+'-'+ str(rec.REF)+':'+str(rec.ALT),
                 rec.CHROM,
                 rec.POS,
                 rec.REF,
@@ -127,25 +119,23 @@ class genotyper:
 
     if consThresh == '3':
         ## get IDs of snps common to all sets
-        varquery = 'SELECT a.varID FROM \
-                    atlas AS a \
-                    JOIN freebayes AS f ON a.varID=f.varID \
-                    JOIN gatk as g ON a.varID=g.varID'
+        varquery = 'SELECT atlas.varID FROM atlas \
+                    JOIN freebayes ON atlas.varID=freebayes.varID \
+                    JOIN gatk ON atlas.varID=gatk.varID'
     elif consThresh == '2':
         ## get IDs of snps in at least 2/3 sets
-        varquery = 'SELECT a.varID FROM atlas AS a \
-                        JOIN freebayes AS f ON a.varID=f.varID \
+        varquery = 'SELECT atlas.varID FROM atlas \
+                        JOIN freebayes ON atlas.varID=freebayes.varID \
                     UNION \
-                    SELECT f.varID FROM freebayes AS f \
-                        JOIN gatk AS g ON f.varID=g.varID \
+                    SELECT freebayes.varID FROM freebayes \
+                        JOIN gatk ON freebayes.varID=gatk.varID \
                     UNION \
-                    SELECT a.varID FROM atlas AS a \
-                        JOIN gatk AS g ON a.varID=g.varID'
+                    SELECT atlas.varID FROM atlas \
+                        JOIN gatk ON atlas.varID=gatk.varID'
 
      ## pull IDs from database
     cur.execute(varquery)
     commonVar = cur.fetchall()
-
 
     print 'Calling consensus genotypes for each variant.'
     ## create consensus table in db
@@ -174,10 +164,6 @@ class genotyper:
 
         ## store genotypes for a variant for each caller
         callerGenotypes = dict()
-        chr = list()
-        pos = list()
-        alt = list()
-        ref = list()
         infoFields = dict()
 
         for table in self.vcfTables:
@@ -187,12 +173,13 @@ class genotyper:
                 ## variant was observed by this algorithm
                 callerGenotypes[table] = row
 
-                ## we should check whether chr, pos, ref, alt match here
-                chr.append(row['chr'])
-                pos.append(row['pos'])
-                ref.append(row['ALT'])
-                alt.append(row['REF'])
-
+        
+                ## grab the meta data from arbitrary caller -- all are matched on uniq var IDs
+                chr = row['chr']
+                pos = row['pos']
+                ref = row['REF']
+                alt = row['ALT']
+       
                 ## store QUAL scores
                 infoFields[table] = row['QUAL']
             else:
@@ -201,15 +188,6 @@ class genotyper:
                 callerGenotypes[table] = dict( zip(commonSam, [ None for x in commonSam]) )
 
 
-        if len(chr)==1 and len(pos)==1 and len(ref)==1 and len(alt)==1:
-            chr = chr.pop()
-            pos = pos.pop()
-            ref = ref.pop()
-            alt = alt.pop()
-        else:
-            ## log these variants
-            continue
-
         ## create a row of consensus genotypes for this variant
         varID = var
         qual = '-'
@@ -217,7 +195,8 @@ class genotyper:
 
         ## store QUAL scores in info matching the a specific order
         info = list()
-        fieldAbbrev = {'atlas':'AQ', 'freebayes':'FQ', 'gatk':'GQ'}
+        qualAbbrev = [ caller[0].capitalize()+'Q' for caller in self.vcfTables ]
+        fieldAbbrev = dict(zip(self.vcfTables, qualAbbrev))
         for caller in fieldAbbrev.keys():
             info.append(fieldAbbrev[caller] + '=' + infoFields[caller])
         info = ';'.join(info)
@@ -284,7 +263,6 @@ class genotyper:
         filter = '.'
         info = str(var['INFO'])
         format = 'GT:CN'
-        #sampleGeno = [ var[str(sam).strip('"')] for sam in commonSam ]
 
         ##assemble the row
         row = [chr, pos, varid, ref, alt, qual, filter, info, format]
@@ -300,6 +278,9 @@ class genotyper:
               consensusFlag = 'T'
 
             row.append( geno + ':' + consensusFlag )
+       
+        ## if all genotypes are missing, do not write the record out
+        print set(row)
         print >> vcfCon, '\t'.join(row)
 
 

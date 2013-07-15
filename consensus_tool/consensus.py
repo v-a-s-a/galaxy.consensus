@@ -30,9 +30,9 @@ def main():
 
   ## make a consensus call set object
   consensusGenotyper = genotyper(sqliteConnection=sqliteConnection,
-    atlasVCF=options.atlasVcf,
-    gatkVCF=options.gatkVcf,
-    freebayesVCF=options.freebayesVcf)
+    atlasVcf=options.atlasVcf,
+    gatkVcf=options.gatkVcf,
+    freebayesVcf=options.freebayesVcf)
 
   ## create consensus genotype table
   consensusGenotyper.call_consensus()
