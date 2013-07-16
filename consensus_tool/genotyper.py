@@ -28,6 +28,28 @@ class genotyper:
     for branchVcf in self.vcfTables:
       self.store_vcf(vcf=kwargs.get(branchVcf), source=branchVcf)
 
+  def constr_consensus_query(self, ncallers):
+    '''
+    Construct a query returning the variants concordant among *ncallers
+    '''
+
+    ## total number of tables in this run
+    ntables = len(self.vcfTables)
+
+    ## "level of consensus" -- from strict (all talbes)
+    consenLevel = ntables - (ntables - ncallers)
+
+    if ncallers > ntables:
+      raise Exception('Asking for consensus among more callers than provided!')
+   
+    
+    table1 = self.vcfTables[0]
+    base = 'SELECT %s.varID FROM %s' % (table1, table1)
+    extension = [ '%s ON %s.varID=%s.varID' % (table, table1, table) for table in self.vcfTables[1:] ]
+    extension.insert(0, base)
+    query = ' JOIN '.join(extension)
+
+    return query
 
   def store_vcf(self, vcf, source):
     '''
@@ -101,10 +123,14 @@ class genotyper:
 
 
 
-  def call_consensus(self, consThresh='3'):
+  def call_consensus(self, consThresh=None):
     '''
     Reduce variant tables into consensus table.
     '''
+
+    if consThresh is None:
+      ## default consensus is among all callers input
+      consThresh = len(self.vcfTables)
 
     cur = self.sqliteConnection.cursor()
 
@@ -117,12 +143,12 @@ class genotyper:
     vcfCols = {'varID':1, 'chr':1, 'pos':1, 'REF':1, 'ALT':1, 'QUAL':1, 'FILTER':1, 'INFO':1}
     commonSam = [ x for x in commonSam if not vcfCols.get(x)  ]
 
-    if consThresh == '3':
+    if consThresh == 3:
         ## get IDs of snps common to all sets
         varquery = 'SELECT atlas.varID FROM atlas \
                     JOIN freebayes ON atlas.varID=freebayes.varID \
                     JOIN gatk ON atlas.varID=gatk.varID'
-    elif consThresh == '2':
+    elif consThresh == 2:
         ## get IDs of snps in at least 2/3 sets
         varquery = 'SELECT atlas.varID FROM atlas \
                         JOIN freebayes ON atlas.varID=freebayes.varID \
@@ -133,9 +159,11 @@ class genotyper:
                     SELECT atlas.varID FROM atlas \
                         JOIN gatk ON atlas.varID=gatk.varID'
 
-     ## pull IDs from database
+    ## pull IDs from database
     cur.execute(varquery)
     commonVar = cur.fetchall()
+
+    print self.constr_consensus_query(3) 
 
     print 'Calling consensus genotypes for each variant.'
     ## create consensus table in db
@@ -207,9 +235,9 @@ class genotyper:
             ## dict access of row is much faster
             ## store genotype for each sample in consensus table
             genoSet = [ callerGenotypes[table][str(sam).strip('"')] for table in self.vcfTables ]
-            if consThresh == '3':
+            if consThresh == 3:
                 genotypeField = strict_consensus(genoSet)
-            elif consThresh == '2':
+            elif consThresh == 2:
                 genotypeField = loose_consensus(genoSet)
 
             ## TODO :: handle missing data more intelligently
@@ -221,8 +249,14 @@ class genotyper:
         cur.execute("INSERT INTO consensus VALUES(%s)" % valString, consensusRecord)
 
   
-
-    
+  
+  def make_out_vcf(commonSam):
+    '''
+    Only conceived of now.
+    The idea is to setup the output VCF with specified parameters.
+    Write records to it later, after its been initialized.
+    '''
+    pass
 
   def write_vcf(self, vcfOut):
     '''

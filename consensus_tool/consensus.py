@@ -35,7 +35,7 @@ def main():
     freebayesVcf=options.freebayesVcf)
 
   ## create consensus genotype table
-  consensusGenotyper.call_consensus()
+  consensusGenotyper.call_consensus(consThresh=3)
 
   ## write to file
   consensusGenotyper.write_vcf(options.baseOut)
