@@ -1,6 +1,8 @@
 import sqlite3 as sql
 import vcf as pyvcf
 from consensus_functions import *
+import itertools as iter
+
 
 class genotyper:
   '''
@@ -41,13 +43,35 @@ class genotyper:
 
     if ncallers > ntables:
       raise Exception('Asking for consensus among more callers than provided!')
-   
-    
-    table1 = self.vcfTables[0]
-    base = 'SELECT %s.varID FROM %s' % (table1, table1)
-    extension = [ '%s ON %s.varID=%s.varID' % (table, table1, table) for table in self.vcfTables[1:] ]
-    extension.insert(0, base)
-    query = ' JOIN '.join(extension)
+  
+    ## TODO: factor out these ugly conditionals 
+    base = 'SELECT %s.varID FROM %s' % (self.vcfTables[0], self.vcfTables[0])
+    if consenLevel == ntables:
+      ## calling the most string level of consensus
+      table1 = self.vcfTables[0]
+      extension = [ ' JOIN %s ON %s.varID=%s.varID' % (table, table1, table) for table in self.vcfTables[1:] ]
+      extension.insert(0, base)
+      query = ' '.join(extension)
+    elif consenLevel == 1:
+      ## allowing any variant seen anywhere
+      extension = [ 'SELECT %s.varID FROM %s' % (table, table) for table in self.vcfTables[1:] ]
+      extension.insert(0, base)
+      query = ' UNION '.join(extension)
+    elif consenLevel == 2 and ntables == 3:
+      
+      ## choose combinations
+      combs = iter.combinations(self.vcfTables, ncallers)
+      query = list()
+      for combo in combs:
+        ## construct select statement
+        selectState = ' SELECT %s.varID FROM %s' % (combo[0], combo[0])
+        ## construct join statement
+        joinState = ' JOIN %s ON %s.varID=%s.varID ' % (combo[1], combo[0], combo[1])
+        query.append(selectState + joinState)
+      query = ' UNION '.join(query)
+
+    else:
+      raise Exception('Consensus among %i callers given %i inputs is not currently supported.' % (ncallers, ntables))
 
     return query
 
@@ -82,10 +106,21 @@ class genotyper:
         'QUAL TEXT',
         'FILTER TEXT',
         'INFO TEXT']
+    ## construct genotype columns
     types = [ 'TEXT' for sam in reader.samples ]
     samples = [ '"' + sam + '"' for sam in reader.samples  ]
     samCol = [ ' '.join(pair) for pair in zip(samples, types) ]
-    template = ','.join( colTemplate + samCol )
+
+    ## construct DEPTH columns -- flagged as DP in most vcfs
+    realTypes = [ 'REAL' for sam in reader.samples ]
+    dpSamples = [ '"'+sample+'.DP'+'"' for sample in reader.samples ]
+    dpCol = [ ' '.join(pair) for pair in zip(dpSamples, realTypes) ]
+
+    ## construct PL columns
+    plSamples = [ '"'+sample+'.PL'+'"' for sample in reader.samples ]
+    plCol = [ ' '.join(pair) for pair in zip(plSamples, types) ]
+
+    template = ','.join( colTemplate + samCol + dpCol + plCol )
 
     ## push vcf rows into db
     with self.sqliteConnection:
@@ -101,7 +136,7 @@ class genotyper:
             
             ## skip multi-nucleotide polymorphisms
             if len(rec.ALT) > 1:
-                print '\tNOT PROCESSING MULTI-ALLELIC SITES OR MNPs'
+                print '\tNot processing site with ALT: %s' % rec.ALT
                 continue
 
             ## create build a record for the variant
@@ -113,9 +148,27 @@ class genotyper:
                 rec.QUAL,
                 str(rec.FILTER),
                 str(rec.INFO) ]
+            ## append genotypes
             for sam in samples:
                 varRec.append(rec.genotype(sam.strip('"'))['GT'])
 
+            ## append depths if relevant to this caller
+            for sam in samples:
+                try:
+                    dp = getattr(rec.genotype(sam.strip('"')).data, 'DP')
+                    varRec.append(dp)
+                except AttributeError:
+                    varRec.append('null')
+            
+            ## append PL values if relevant to this caller
+            for sam in samples:
+                try:
+                    pl = getattr(rec.genotype(sam.strip('"')).data, 'PL')
+                    pl.replace(' ','')
+                    varRec.append(str(pl))
+                except AttributeError:
+                    varRec.append('null')
+      
             ## insert into db
             parSub = ','.join( tuple('?'*len(varRec)) )
             cur.execute("INSERT INTO %s VALUES(%s)" % (source, parSub), varRec)
@@ -141,29 +194,29 @@ class genotyper:
         names.append(set(map(lambda x: x[0], colq.description)))
     commonSam = reduce(lambda x,y: x.intersection(y), names )
     vcfCols = {'varID':1, 'chr':1, 'pos':1, 'REF':1, 'ALT':1, 'QUAL':1, 'FILTER':1, 'INFO':1}
-    commonSam = [ x for x in commonSam if not vcfCols.get(x)  ]
+    ## Jesus this is ugly, and not at all extensible
+    commonSam = [ x for x in commonSam if not vcfCols.get(x) and not 'PL' in x and not 'DP' in x  ]
 
     if consThresh == 3:
         ## get IDs of snps common to all sets
-        varquery = 'SELECT atlas.varID FROM atlas \
-                    JOIN freebayes ON atlas.varID=freebayes.varID \
-                    JOIN gatk ON atlas.varID=gatk.varID'
+        varquery = self.constr_consensus_query(3)
+
     elif consThresh == 2:
-        ## get IDs of snps in at least 2/3 sets
-        varquery = 'SELECT atlas.varID FROM atlas \
-                        JOIN freebayes ON atlas.varID=freebayes.varID \
-                    UNION \
-                    SELECT freebayes.varID FROM freebayes \
-                        JOIN gatk ON freebayes.varID=gatk.varID \
-                    UNION \
-                    SELECT atlas.varID FROM atlas \
-                        JOIN gatk ON atlas.varID=gatk.varID'
+        ## get IDs of snps comming to union of all pairs of sets
+        varquery = self.constr_consensus_query(2)
+
+    elif consThresh == 1:
+        ## get IDs of any snp observed in the study
+        varquery = self.constr_consensus_query(1)
+ 
+    else:
+        raise Exception('Consensus threshold %i is not supported!' % consThresh )
 
     ## pull IDs from database
+    print 'CONSENSUS QUERY:\n%s' % varquery
     cur.execute(varquery)
     commonVar = cur.fetchall()
 
-    print self.constr_consensus_query(3) 
 
     print 'Calling consensus genotypes for each variant.'
     ## create consensus table in db
@@ -176,32 +229,47 @@ class genotyper:
                 'QUAL TEXT',
                 'FILTER TEXT',
                 'INFO TEXT']
+
     types = [ 'TEXT' for sam in commonSam ]
-    samples = [ '"' + sam + '"' for sam in commonSam  ]
+    realTypes = [ 'REAL' for sam in commonSam ]
+    ## genotype columns
+    samples = [ '"'+sam+'"' for sam in commonSam  ]
     samCol = [ ' '.join(pair) for pair in zip(samples, types) ]
-    template = ','.join( colTemplate + samCol )
+
+    ## average read depth columns
+    adSamples = [ '"'+sample+'.AD'+'"' for sample in commonSam ]
+    adCol = [ ' '.join(pair) for pair in zip(adSamples, realTypes) ]
+
+    ## GATKs PL columns
+    plSamples = [ '"'+sample+'.PL'+'"' for sample in commonSam ]
+    plCol = [ ' '.join(pair) for pair in zip(plSamples, types) ]
+
+    template = ','.join( colTemplate + samCol + adCol + plCol )
     cur.execute("CREATE TABLE consensus(%s)" % template )
 
     ## swicth to dict cursor for fast row access
     self.sqliteConnection.row_factory = sql.Row
     cur = self.sqliteConnection.cursor()
 
-     ## pull sample genotypes for each variant
+    ## pull sample genotypes for each variant
     for idx, var in enumerate(commonVar):
         var = var[0]
 
         ## store genotypes for a variant for each caller
         callerGenotypes = dict()
+        callerDepths = dict()
         infoFields = dict()
+        callerPLs = dict()
 
         for table in self.vcfTables:
             cur.execute("SELECT * FROM %s WHERE varID='%s'" % (table, var))
             row = cur.fetchone()
             if row:
                 ## variant was observed by this algorithm
-                callerGenotypes[table] = row
+                callerGenotypes[table] = dict( (sam,row[sam]) for sam in commonSam )
+                callerDepths[table] = dict( (sam+'.DP',row[sam+'.DP']) for sam in commonSam )
+                callerPLs[table] = dict( (sam+'.PL',row[sam+'.PL']) for sam in commonSam )
 
-        
                 ## grab the meta data from arbitrary caller -- all are matched on uniq var IDs
                 chr = row['chr']
                 pos = row['pos']
@@ -245,6 +313,17 @@ class genotyper:
                  genotypeField = './.'
             consensusRecord.append('\'' + str(genotypeField) + '\'')
 
+            ## calculate and append the average depth metrics
+            depthSet = [ callerDepths[table][sam+'.DP'] for table in self.vcfTables ]
+            cleanSet = [ f for f in depthSet if f ]
+            meanDP = reduce(lambda x, y: x + y, cleanSet) / len(cleanSet)
+            consensusRecord.append(str(meanDP))
+
+            ## append the PL metrics
+            plSet = [ callerPLs[table][sam+'.PL'] for table in self.vcfTables ]
+            pl = [ f.strip('[]') for f in plSet if f!='none' ][0]
+            consensusRecord.append(str(pl))
+
         valString = ','.join( tuple('?'*len(consensusRecord)) )
         cur.execute("INSERT INTO consensus VALUES(%s)" % valString, consensusRecord)
 
@@ -271,7 +350,7 @@ class genotyper:
         names.append(set(map(lambda x: x[0], colq.description)))
     commonSam = reduce(lambda x,y: x.intersection(y), names )
     vcfCols = {'varID':1, 'chr':1, 'pos':1, 'REF':1, 'ALT':1, 'QUAL':1, 'FILTER':1, 'INFO':1}
-    commonSam = [ x for x in commonSam if not vcfCols.get(x)  ]
+    commonSam = [ x for x in commonSam if not vcfCols.get(x) and not 'PL' in x and not 'DP' in x  ]
 
     vcfCon = open(vcfOut, 'w')
     print >> vcfCon, '##fileformat=VCFv4.0'
@@ -280,6 +359,9 @@ class genotyper:
     print >> vcfCon, '##INFO=<ID=GQ,Number=1,Type=Float,Description="GATK QUAL score for variant.">'
     print >> vcfCon, '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">'
     print >> vcfCon, '##FORMAT=<ID=CN,Number=1,Type=Character,Description="Consensus status of genotype.">'
+    print >> vcfCon, '##FORMAT=<ID=PL,Number=G,Type=Integer,Description="GATK\'s Normalized, Phred-scaled likelihoods for genotypes as defined in the VCF specification">'
+    print >> vcfCon, '##FORMAT=<ID=AD,Number=1,Type=Float,Description="Average depth across callers.">'
+
     header = ['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT']
     for sam in commonSam: header.append(str(sam).strip('"'))
     print >> vcfCon, '\t'.join(header)
@@ -296,13 +378,16 @@ class genotyper:
         qual = '.'
         filter = '.'
         info = str(var['INFO'])
-        format = 'GT:CN'
+        format = 'GT:CN:PL:AD'
 
-        ##assemble the row
+        ## assemble the row
         row = [chr, pos, varid, ref, alt, qual, filter, info, format]
         for sam in commonSam:
-            ## pull genotype
-            geno = var[str(sam).strip('"')].strip('\'')
+            sam = str(sam).strip('"')
+
+             ## pull genotype
+            
+            geno = var[sam].strip('\'')
 
             ## record consensus status
             if geno == '*/*':
@@ -310,11 +395,21 @@ class genotyper:
               geno = './.'
             else:
               consensusFlag = 'T'
+            
+            ## record PL
+            pl = var[sam+'.PL']
 
-            row.append( geno + ':' + consensusFlag )
+            ## record average read depth
+            ad = var[sam+'.AD']
+
+            ## append consensus flag
+            row.append( geno+':'+consensusFlag+':'+pl+':'+ad )
+
+            print var
+            print geno, consensusFlag, pl, ad
        
+
         ## if all genotypes are missing, do not write the record out
-        print set(row)
         print >> vcfCon, '\t'.join(row)
 
 
