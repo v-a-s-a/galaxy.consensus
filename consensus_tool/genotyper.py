@@ -163,9 +163,8 @@ class genotyper:
             ## append PL values if relevant to this caller
             for sam in samples:
                 try:
-                    pl = getattr(rec.genotype(sam.strip('"')).data, 'PL')
-                    pl.replace(' ','')
-                    varRec.append(str(pl))
+                    pl = str(getattr(rec.genotype(sam.strip('"')).data, 'PL'))
+                    varRec.append(pl)
                 except AttributeError:
                     varRec.append('null')
       
@@ -298,6 +297,9 @@ class genotyper:
         info = ';'.join(info)
 
         consensusRecord = [varID, chr, pos, ref, alt, qual, filter, info]
+        genotypes = list()
+        adValues = list()
+        plValues = list()
         for sam in commonSam:
 
             ## dict access of row is much faster
@@ -311,19 +313,23 @@ class genotyper:
             ## TODO :: handle missing data more intelligently
             if not genotypeField:
                  genotypeField = './.'
-            consensusRecord.append('\'' + str(genotypeField) + '\'')
+            genotypes.append('\'' + str(genotypeField) + '\'')
+            #consensusRecord.append('\'' + str(genotypeField) + '\'')
 
             ## calculate and append the average depth metrics
             depthSet = [ callerDepths[table][sam+'.DP'] for table in self.vcfTables ]
             cleanSet = [ f for f in depthSet if f ]
             meanDP = reduce(lambda x, y: x + y, cleanSet) / len(cleanSet)
-            consensusRecord.append(str(meanDP))
+            adValues.append(meanDP)
+            #consensusRecord.append(str(meanDP))
 
             ## append the PL metrics
             plSet = [ callerPLs[table][sam+'.PL'] for table in self.vcfTables ]
-            pl = [ f.strip('[]') for f in plSet if f!='none' ][0]
-            consensusRecord.append(str(pl))
+            pl = [ f.strip('[]').replace(' ','') for f in plSet if f!='none' ][0]
+            plValues.append(str(pl))
+            #consensusRecord.append(str(pl))
 
+        consensusRecord = consensusRecord + genotypes + adValues + plValues
         valString = ','.join( tuple('?'*len(consensusRecord)) )
         cur.execute("INSERT INTO consensus VALUES(%s)" % valString, consensusRecord)
 
@@ -400,13 +406,11 @@ class genotyper:
             pl = var[sam+'.PL']
 
             ## record average read depth
-            ad = var[sam+'.AD']
+            ad = str(var[sam+'.AD'])
 
             ## append consensus flag
             row.append( geno+':'+consensusFlag+':'+pl+':'+ad )
 
-            print var
-            print geno, consensusFlag, pl, ad
        
 
         ## if all genotypes are missing, do not write the record out
