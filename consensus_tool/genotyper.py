@@ -121,7 +121,6 @@ class genotyper:
     plCol = [ ' '.join(pair) for pair in zip(plSamples, types) ]
 
     template = ','.join( colTemplate + samCol + dpCol + plCol )
-
     ## push vcf rows into db
     with self.sqliteConnection:
 
@@ -156,7 +155,8 @@ class genotyper:
             for sam in samples:
                 try:
                     dp = getattr(rec.genotype(sam.strip('"')).data, 'DP')
-                    varRec.append(dp)
+                    if dp: varRec.append(dp)
+                    else: varRec.append('null')
                 except AttributeError:
                     varRec.append('null')
             
@@ -305,6 +305,7 @@ class genotyper:
             ## dict access of row is much faster
             ## store genotype for each sample in consensus table
             genoSet = [ callerGenotypes[table][str(sam).strip('"')] for table in self.vcfTables ]
+            
             if consThresh == 3:
                 genotypeField = strict_consensus(genoSet)
             elif consThresh == 2:
@@ -318,8 +319,9 @@ class genotyper:
 
             ## calculate and append the average depth metrics
             depthSet = [ callerDepths[table][sam+'.DP'] for table in self.vcfTables ]
-            cleanSet = [ f for f in depthSet if f ]
-            meanDP = reduce(lambda x, y: x + y, cleanSet) / len(cleanSet)
+            cleanSet = [ f for f in depthSet if f and f!=u'null' ]
+            if len(cleanSet) > 0: meanDP = reduce(lambda x, y: x + y, cleanSet) / len(cleanSet)
+            else: meanDP = '0.0'
             adValues.append(meanDP)
             #consensusRecord.append(str(meanDP))
 
