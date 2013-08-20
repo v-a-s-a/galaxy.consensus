@@ -32,11 +32,11 @@ Test data is located in the data/ directory.
 
 To run the test data, try:
 
-    consensus.py --out TEST \
+    consensus_tool/consensus.py --out TEST \
       --atlas-vcf data/atlas.small.vcf \
       --freebayes-vcf data/freebayes.small.vcf \
       --gatk-vcf data/gatk.small.vcf \
-      --db-file mktemp
+      --db-file $(mktemp)
 
 
 This produces a file: TEST.vcf. This Contains consensus genotypes for variants and samples that match between all
