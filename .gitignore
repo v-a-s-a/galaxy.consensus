@@ -1,2 +1,7 @@
 ## compiled stuff
 *.pyc
+
+
+## data
+*.vcf
+*.idx
