@@ -16,13 +16,16 @@ class concordant_walker:
     ## number of readers passed to this instance
     self.vcfCount = len(self.vcfs)
     ## first records in each file
-    self.inits = [ x.next() for x in self.readers ] 
+    self.records = [ x.next() for x in self.readers ] 
     ## track current positions of each record
-    self.positions = [ int(rec.POS) for rec in self.inits  ]
+    self.positions = [ int(rec.POS) for rec in self.records  ]
     ## track current greatest position (known as the prime position, and prime readers)
     self.prime = max(self.positions)
     ## pull inidices of readers which have reached the largest observed position
     self.primeIndices = [ i for i in range(self.vcfCount) if self.positions[i]==self.prime ]
+    ## identify samples which match between sets
+    sampleSets = [ set(x.samples) for x in self.readers  ]
+    self.samples = reduce( lambda x,y: x.intersection(y), sampleSets )
 
     ## TODO: check that files are sorted
     for vcf in self.vcfs:
@@ -35,14 +38,15 @@ class concordant_walker:
     self.primeIndices = [ i for i, x in enumerate(self.positions) if x==self.prime ]
 
 
-  def __updatePositions(self):
+  def __updateRecords(self):
     '''
     Iterate non-prime readers.
     '''
     ## pull indices of readers which need to iterate to reach or exceed the prime position 
     iterIndices = [ i for i in range(self.vcfCount) if i not in self.primeIndices ] 
-    ## update positions in non-prime readers
-    self.positions = [ x if i in self.primeIndices else int(self.readers[i].next().POS) for i,x in enumerate(self.positions) ]
+    ## update records in non-prime readers
+    self.records = [ x if i in self.primeIndices else self.readers[i].next() for i,x in enumerate(self.records) ]
+    self.positions = [ int(x.POS) for x in self.records ]
     ## update prime if necessary
     if max(self.positions) > self.prime:
       self.prime = max(self.positions)
@@ -50,8 +54,12 @@ class concordant_walker:
     self.__updatePrimeIndices()
 
 
-
-    print self.positions, self.primeIndices
+  def __getNewPositions(self):
+    '''
+    Try a new set of positions after processing concordant sites.
+    '''
+    self.positions = [ int(x.next().POS) for x in self.readers ]
+    self.__updatePrimeIndices()
 
   def __iterUntilEqual(self):
     '''
@@ -59,8 +67,13 @@ class concordant_walker:
     '''
     ## check if all readers have reached the same position
     while len(set(self.positions)) != 1:
-      self.__updatePositions()
-
+      try:
+        self.__updateRecords()
+      except StopIteration:
+        ## we've exhausted one of the readers
+        return False
+    ## we have not yet exhausted the readers
+    return True
 
   def walk_concordant_sites(self):
     '''
@@ -72,25 +85,14 @@ class concordant_walker:
       * assume only bi-allelic variation
       * assume only one chromosome
     '''
-    ## find largest site among these, X
-    ## iterate other files until records match or are exceeded
-    ## if records match -- do consensus work/exit/whatever
-    ## if record found exceeding position of X, set this as X and iterate
 
-    self.__iterUntilEqual()
-    return self.positions
+    while self.__iterUntilEqual():
+      ## move on to next set of variants
+      self.__getNewPositions()
 
+      ## yield set genotypes
+      yield self.records
 
-def __main__():
-  
-  testFiles = ['../data/atlas.small.vcf',
-               '../data/freebayes.small.vcf',
-               '../data/gatk.small.vcf']
-  walker = concordant_walker(vcfList = testFiles)
-  print walker.walk_concordant_sites()
-
-
-if __name__ == '__main__':
-  __main__()
+    
 
 
