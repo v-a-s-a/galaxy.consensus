@@ -10,6 +10,10 @@ import vcf as pyvcf
 
 class concordant_walker:
 
+  @property
+  def samples(self):
+    return self.samples
+
   def __init__(self, *args, **kwargs):
     self.vcfs = kwargs.get('vcfList')
     self.readers = [ pyvcf.Reader(open(x)) for x in self.vcfs ]
