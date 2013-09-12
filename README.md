@@ -3,7 +3,7 @@ Introduction:
 
 This is an initial implementation of a two stage voting scheme among variant calling algorithms. Given a set of VCF files produced by various algorithms, sites are selected if they are seen among all callers. Genotypes among these sites are then selected as those that match among all callers. Currently, a user can input any number of sorted VCF files, and a strict consensus of variant sites and genotypes will be generated.
 
-Any VCF can be used as long as it can be parsed by (James Casbon's pyVCF module)[https://github.com/jamescasbon/PyVCF].
+Any VCF can be used as long as it can be parsed by [James Casbon's pyVCF module](https://github.com/jamescasbon/PyVCF).
 
 Options:
 ========
