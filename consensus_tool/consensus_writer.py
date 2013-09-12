@@ -49,7 +49,7 @@ class consensus_vcf:
     self.samples = sampleList
 
 
-  def __init__(self, outFile):
+  def __init__(self):
     '''
     Start with a minimal description, and fill out fields from there.
     '''
@@ -57,10 +57,7 @@ class consensus_vcf:
     self.format = list()
     self.info = list()
     self.samples = list()  
-    self.outFile = open(outFile, 'w')
 
-  def __del__(self):
-    self.outFile.close()
 
   def make_var_id(self, rec):
     '''
@@ -76,18 +73,18 @@ class consensus_vcf:
     order = [ 'ID', 'Number', 'Type', 'Description' ]
 
     ## default obligatory info
-    print >> self.outFile, '##fileformat=VCFv4.1'
+    print '##fileformat=VCFv4.1'
     ## write all INFO fields out
     for info in self.info:
       fields = ','.join([ '='.join([x, info[x]]) for x in order ]) 
-      print >> self.outFile,  "##INFO=<%s>" % fields
+      print "##INFO=<%s>" % fields
     ## write all FORMAT fields out
     for format in self.format:
       fields = ','.join([ '='.join([x, format[x]]) for x in order ])
-      print >> self.outFile, "##FORMAT=<%s>" % fields
+      print "##FORMAT=<%s>" % fields
     ## write final and most important line of the header
     mainLine = "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t%s" % '\t'.join(self.samples)
-    print >> self.outFile, mainLine
+    print mainLine
 
 
   def convert_genotype(self, genotype):
@@ -128,4 +125,4 @@ class consensus_vcf:
       
     ## put together the line in the VCF file
     vcfLine = [chr, pos, id, ref, alt, qual, filter, format] + genotypeFields
-    print >> self.outFile, '\t'.join(vcfLine)
+    print '\t'.join(vcfLine)
