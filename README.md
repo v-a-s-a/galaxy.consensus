@@ -31,7 +31,7 @@ Will take the three test files in the data directory and generate a strict conse
 
 Some things to keep in mind: 
 * Multi-sample VCF files are currently supported, and the output will contain only samples which are found in all input files.
-* Files must be sorted by physical position. The caller works by iterating simultaneously across all input files until a matching variant record is found. If a VCF file is not sorted similarly, it is unlikely that any overlapping sites will be found.
+* Files must be sorted by physical position. This can be achieved using any VCF utility such as (vcf-sort in vcftools)[http://vcftools.sourceforge.net/perl_module.html#vcf-sort]. The caller works by iterating simultaneously across all input files until a matching variant record is found. If a VCF file is not sorted similarly, it is unlikely that any overlapping sites will be found.
 * Missing data on the genotype level is ignored if actual genotypes are available in other VCF files. Missing data is produced only if all sites are missing, or if genotypes do not agree among all call sets.
 
 
