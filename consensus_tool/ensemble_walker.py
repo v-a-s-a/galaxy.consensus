@@ -9,6 +9,10 @@ Given a list of vcf files, iterate over records in each simultaneously.
 import vcf as pyvcf
 
 class concordant_walker:
+  '''
+  Walks across an arbitrary number of VCF files given a chomosome or contig contained in all
+  '''
+
 
   @property
   def samples(self):
@@ -16,7 +20,10 @@ class concordant_walker:
 
   def __init__(self, *args, **kwargs):
     self.vcfs = kwargs.get('vcfList')
-    self.readers = [ pyvcf.Reader(open(x)) for x in self.vcfs ]
+    self.contig = kwargs.get('contig')
+    self.readers = [ pyvcf.Reader(open(x), prepend_chr=True) for x in self.vcfs ]
+    self.readers = [ x.fetch(chrom=self.contig, start=1, end=1000000000) for x in self.readers ]
+
     ## number of readers passed to this instance
     self.vcfCount = len(self.vcfs)
     ## first records in each file
