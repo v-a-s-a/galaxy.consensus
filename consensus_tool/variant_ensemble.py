@@ -11,7 +11,7 @@ class variant_ensemble:
     self.recordSet = kwargs.get('recordSet')
     self.samples = kwargs.get('samples') 
 
-  def genotype_consensus(self, calls):
+  def is_genotype_consensus(self, calls):
     '''
     Determine whether all _Calls for a sample at a site are equal.
     '''
@@ -28,7 +28,11 @@ class variant_ensemble:
     for sample in self.samples:
       genotypes = [ record.genotype(sample) for record in self.recordSet ]
       genotypes = [ x for x in genotypes if x.gt_type != None ]
-      consensusGenotype = self.genotype_consensus(calls=genotypes)    
+      ## handle the missing genotype data here
+      if not genotypes:
+        consensusGenotypes[sample] = './.'
+        continue
+      consensusGenotype = self.is_genotype_consensus(calls=genotypes)
       if consensusGenotype: 
         ## return the consensus genotype
         consensusGenotypes[sample] = genotypes[0].gt_type
