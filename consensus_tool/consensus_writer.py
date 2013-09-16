@@ -13,7 +13,7 @@ class consensus_vcf:
     return self.format
   @format.setter
   def format(self, id, number, type, description):
-    self.format = [ {"ID":id, "Number":number, "Type":type, "Description":description} ] 
+    self.format = [ {"ID":id, "Number":number, "Type":type, "Description":'\"'+description+'\"'} ] 
   @format.getter
   def format(self):
     return self.format
@@ -23,7 +23,7 @@ class consensus_vcf:
     Add data for a FORMAT field to the VCF file.
       Format is a list of dictionaries, each dict describing a format entry.
     '''
-    self.format.append( {"ID":id, "Number":number, "Type":type, "Description":description} )
+    self.format.append( {"ID":id, "Number":number, "Type":type, "Description":'\"'+description+'\"'} )
 
 
   @property
@@ -31,14 +31,14 @@ class consensus_vcf:
     return self.info
   @info.setter
   def info(self, id, number, type, description):
-    self.info = [ {"ID":id, "Number":number, "Type":type, "Description":description} ]
+    self.info = [ {"ID":id, "Number":number, "Type":type, "Description":'\"'+description+'\"'} ]
     
   def add_info(self, id, number, type, description):
     '''
     Add data for an INFO field to the VCF file.
       Info is a list of dictionaries, each dict describing an info entry.
     '''
-    self.info.append( {"ID":id, "Number":number, "Type":type, "Description":description} )
+    self.info.append( {"ID":id, "Number":number, "Type":type, "Description":'\"'+description+'\"'} )
     
 
   @property
