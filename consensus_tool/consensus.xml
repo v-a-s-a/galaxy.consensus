@@ -6,10 +6,7 @@
     </description>
 
     <command interpreter="python">
-        consensus.py --atlas-vcf $ATLAS_VCF \
-            --gatk-vcf $GATK_VCF \
-            --freebayes-vcf $FREEBAYES_VCF \
-            --out $OUT
+        consensus_genotyper.py $ATLAS_VCF  $GATK_VCF $FREEBAYES_VCF > $OUT
     </command>
 
     <inputs>
