@@ -124,5 +124,5 @@ class consensus_vcf:
       genotypeFields.append(cn+':'+geno)
       
     ## put together the line in the VCF file
-    vcfLine = [chr, pos, id, ref, alt, qual, filter, format] + genotypeFields
+    vcfLine = [chr, pos, id, ref, alt, qual, filter, info, format] + genotypeFields
     print '\t'.join(vcfLine)
