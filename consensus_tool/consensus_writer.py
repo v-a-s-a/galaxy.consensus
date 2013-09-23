@@ -105,7 +105,7 @@ class consensus_vcf:
     pos = str(recordSet[0].POS)
     id = self.make_var_id(recordSet[0])
     ref = recordSet[0].REF
-    alt = str(recordSet[0].ALT)
+    alt = str(recordSet[0].ALT[0])
     qual = '-'
     filter = 'PASS'
     info = '-'
@@ -124,5 +124,5 @@ class consensus_vcf:
       genotypeFields.append(cn+':'+geno)
       
     ## put together the line in the VCF file
-    vcfLine = [chr, pos, id, ref, alt, qual, filter, format] + genotypeFields
+    vcfLine = [chr, pos, id, ref, alt, qual, filter, info, format] + genotypeFields
     print '\t'.join(vcfLine)
