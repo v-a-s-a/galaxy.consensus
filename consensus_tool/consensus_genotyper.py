@@ -11,7 +11,7 @@ def __main__():
   args = parser.parse_args()
 
 
-  walker = concordant_walker(vcfList = args.vcfFiles, contig = '1')
+  walker = concordant_walker(vcfList = args.vcfFiles, contig = '22')
   ## set up the consensus VCF you want to write out
   ## TODO:: there should be a standard and transparent way to propagate information for individual VCF files to the consensus stage.
   outVcf = consensus_vcf()
@@ -29,8 +29,8 @@ def __main__():
 
 
   ## walk over each contig independently
-  contigs = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', 'X'] 
-  #contigs = ['22']
+  #contigs = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', 'X'] 
+  contigs = ['chr22']
 
   for contig in contigs:
     ## instantiate a walker over the input vcf files.
