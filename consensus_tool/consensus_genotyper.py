@@ -8,10 +8,17 @@ def __main__():
   ## parse command line
   parser = arg.ArgumentParser(description='Find sites and genotypes which aggree among an arbitrary number of VCF files.')
   parser.add_argument('vcfFiles', nargs='+', metavar='VCFS', help='List of VCF files for input.')
+  parser.add_argument('--contig', help='Contig ID to operate on.', required = False)
   args = parser.parse_args()
 
+  print args.contig
 
-  walker = concordant_walker(vcfList = args.vcfFiles, contig = '1')
+  if args.contig:
+    contigs = [args.contig]  
+  else:
+    contigs = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', 'X'] 
+
+  walker = concordant_walker(vcfList = args.vcfFiles, contig = contigs[0])
   ## set up the consensus VCF you want to write out
   ## TODO:: there should be a standard and transparent way to propagate information for individual VCF files to the consensus stage.
   outVcf = consensus_vcf()
@@ -28,7 +35,6 @@ def __main__():
 
   ## walk over each contig independently
   #contigs = ['chr1', 'chr2', 'chr3', 'chr4', 'chr5', 'chr6', 'chr7', 'chr8', 'chr9', 'chr10', 'chr11', 'chr12', 'chr13', 'chr14', 'chr15', 'chr16', 'chr17', 'chr18', 'chr19', 'chr20', 'chr21', 'chr22', 'chrX', 'chrY', 'chrMT']
-  contigs = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', 'X'] 
 
   for contig in contigs:
     ## instantiate a walker over the input vcf files.
