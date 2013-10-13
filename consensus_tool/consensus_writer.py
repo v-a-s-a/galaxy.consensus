@@ -63,7 +63,7 @@ class consensus_vcf:
     '''
     All variants will be uniquely identified by chr:pos:ref:alt
     '''
-    return ':'.join([rec.CHROM, str(rec.POS), rec.REF, str(rec.ALT)])
+    return ':'.join([rec.CHROM, str(rec.POS), rec.REF, str(rec.ALT[0])])
 
   def write_header(self):
     '''
@@ -106,9 +106,9 @@ class consensus_vcf:
     id = self.make_var_id(recordSet[0])
     ref = recordSet[0].REF
     alt = str(recordSet[0].ALT[0])
-    qual = '-'
+    qual = '.'
     filter = 'PASS'
-    info = '-'
+    info = ':'.join( [x["ID"] for x in self.info] )
     format = ':'.join([ x["ID"] for x in self.format ])
     
     ## put together sample fields according to FORMATs order
