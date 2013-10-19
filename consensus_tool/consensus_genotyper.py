@@ -12,12 +12,12 @@ def __main__():
   parser.add_argument('--contig', help='Contig ID to operate on.', required = False)
   args = parser.parse_args()
 
-  print args.contig
+  #print args.contig
 
-  if args.contig:
-    contigs = [args.contig]  
-  else:
-    contigs = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', 'X'] 
+  #if args.contig:
+  #  contigs = [args.contig]  
+  #else:
+  #  contigs = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', 'X'] 
 
   walker = concordant_walker(vcfList = args.vcfFiles, contig = contigs[0])
   ## set up the consensus VCF you want to write out
