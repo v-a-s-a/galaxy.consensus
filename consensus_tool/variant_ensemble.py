@@ -1,3 +1,5 @@
+import itertools as it
+
 class variant_ensemble:
   '''
   A set of variants from various VCF files. We want to be able to call various forms of consensus.
@@ -10,6 +12,8 @@ class variant_ensemble:
   def __init__(self, *args, **kwargs):
     self.recordSet = kwargs.get('recordSet')
     self.samples = kwargs.get('samples') 
+    self.ignoreMissing = kwargs.get('ignoreMissing')
+    self.threshold = kwargs.get('threshold')
 
   def is_genotype_consensus(self, calls):
     '''
@@ -18,6 +22,22 @@ class variant_ensemble:
     ## check to see if all calls are equal
     if calls[1:] == calls[:-1]: return True
     else: return False
+
+  def concordant_genotypes(self):
+    '''
+    Return concordant genotypes at an arbitrary threshold.
+    '''
+    consensusGenotypes = dict()
+    for sample in self.samples:
+      genotypes = [ record.genotype(sample) for record in self.recordSet ]
+      ## handle missing genotypes according to the flag passed in
+      if self.ignoreMissing: genotypes = [ x for x in genotypes if x.gt_type != None ]
+      if not genotypes:
+        consensusGenotypes[sample] = './.'
+        continue
+
+      ## deliver the concordant genotypes
+
 
   def set_consensus(self):
     '''
