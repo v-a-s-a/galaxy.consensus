@@ -18,9 +18,6 @@ def __main__():
   outVcf = consensus_vcf()
   outVcf.add_format(id="CN", number="1", type="Character", description="Consensus status")
   outVcf.add_format(id="GT", number="1", type="String", description="Genotype")
-  outVcf = consensus_vcf()
-  outVcf.add_format(id="CN", number="1", type="Character", description="Consensus status")
-  outVcf.add_format(id="GT", number="1", type="String", description="Genotype")
   outVcf.add_info(id="X1", number="1", type="String", description="Placeholder for INFO parsing")
   outVcf.add_info(id="X2", number="1", type="String", description="Placeholder 2 for INFO parsing")
   outVcf.samples = ensemble.samples
@@ -29,6 +26,7 @@ def __main__():
   ## iterate over the concordant sites 
   for records, genotypes in ensemble.concordant_variants(siteThresh=3, genoThresh=3):
     outVcf.write_record( records, genotypes )
+
 
 if __name__ == '__main__':
   __main__()
