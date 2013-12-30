@@ -22,12 +22,12 @@ class variant_ensemble:
   def set_consensus(self):
     '''
     Return a consensus set of genotypes.
-      Discount missing data during the vote.
+      Update: DO NOT Discount missing data during the vote.
     '''
     consensusGenotypes = dict()
     for sample in self.samples:
       genotypes = [ record.genotype(sample) for record in self.recordSet ]
-      genotypes = [ x for x in genotypes if x.gt_type != None ]
+      #genotypes = [ x for x in genotypes if x.gt_type != None ] ## now treating missing as valid genotype
       ## handle the missing genotype data here
       if not genotypes:
         consensusGenotypes[sample] = './.'

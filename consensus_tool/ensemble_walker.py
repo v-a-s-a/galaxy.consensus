@@ -53,17 +53,9 @@ class concordant_walker:
 
   def __init__(self, *args, **kwargs):
     self.vcfs = kwargs.get('vcfList')
-    self.contig = kwargs.get('contig')
     ## start readers across the VCF files
     self.readers = [ pyvcf.Reader(open(x), prepend_chr = False) for x in self.vcfs ]
-    try:
-      self.readers = [ x.fetch(chrom=self.contig, start=1, end=1000000000) for x in self.readers ]
-    except IndexError:
-      print "Could not fetch records from VCF files. Check that your contig ID matches records."
     
-    for x in self.readers:
-      print x
-      print x.next()
     self._getNewRecords()
     ## TODO: check that files are sorted
     for vcf in self.vcfs:
