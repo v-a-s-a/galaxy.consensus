@@ -1,0 +1,86 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Consensus Genotyper for Exome Sequencing by vtrubets</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Consensus Genotyper for Exome Sequencing</h1>
+        <p>Ensemble variant calling implementation and Galaxy wrappers.</p>
+
+        <p class="view"><a href="https://github.com/vtrubets/galaxy.consensus">View the Project on GitHub <small>vtrubets/galaxy.consensus</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/vtrubets/galaxy.consensus/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/vtrubets/galaxy.consensus/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/vtrubets/galaxy.consensus">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>
+<a name="introduction" class="anchor" href="#introduction"><span class="octicon octicon-link"></span></a>Introduction:</h1>
+
+<p>This is an initial implementation of a two stage voting scheme among variant calling algorithms. Given a set of VCF files produced by various algorithms, sites are selected if they are seen among all callers. Genotypes among these sites are then selected as those that match among all callers. Currently, a user can input any number of sorted VCF files, and a strict consensus of variant sites and genotypes will be generated.</p>
+
+<p>Any VCF can be used as long as it can be parsed by <a href="https://github.com/jamescasbon/PyVCF">James Casbon's pyVCF module</a>.</p>
+
+<h1>
+<a name="options" class="anchor" href="#options"><span class="octicon octicon-link"></span></a>Options:</h1>
+
+<pre><code>usage: consensus_genotyper.py [-h] VCFS [VCFS ...]
+
+Find sites and genotypes which aggree among an arbitrary number of VCF files.
+
+positional arguments:
+  VCFS        List of VCF files for input.
+
+optional arguments:
+  -h, --help  show this help message and exit
+</code></pre>
+
+<h1>
+<a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>Usage:</h1>
+
+<p>Test data is located in the data/ directory. The following command:</p>
+
+<p>python ./consensus_tool/consensus_genotyper.py ./data/*vcf &gt; test.output.vcf</p>
+
+<p>Will take the three test files in the data directory and generate a strict consensus of sites and genotypes (i.e. 3/3 files containt the variant site, and 3/3 files agree on the genotype for a sampple at that site).</p>
+
+<p>Some things to keep in mind: </p>
+
+<ul>
+<li>Multi-sample VCF files are currently supported, and the output will contain only samples which are found in all input files.</li>
+<li>Files must be sorted by physical position. This can be achieved using any VCF utility such as (vcf-sort in vcftools)[<a href="http://vcftools.sourceforge.net/perl_module.html#vcf-sort">http://vcftools.sourceforge.net/perl_module.html#vcf-sort</a>]. The caller works by iterating simultaneously across all input files until a matching variant record is found. If a VCF file is not sorted similarly, it is unlikely that any overlapping sites will be found.</li>
+<li>Missing data on the genotype level is ignored if actual genotypes are available in other VCF files. Missing data is produced only if all sites are missing, or if genotypes do not agree among all call sets.</li>
+</ul><h1>
+<a name="planned-extensions" class="anchor" href="#planned-extensions"><span class="octicon octicon-link"></span></a>Planned Extensions:</h1>
+
+<ul>
+<li>Operating on specific regions using the tabix index.</li>
+<li>Support for multi-allelic sites.</li>
+<li>Outputting variant sites which are discordant between callers. This is potentially interesting variation.</li>
+<li>The ability to specify concordance thresholds on the site and genotype level. This could be particularly helpful if one set of variants is markedly different from others, or if one is interested in finding the union of call sets rather than an intersection.</li>
+<li>The ability to preserve information from input VCF files. I'm thinking that it would help to specify this information in a high level configuration file. This would allow you to do things like propagate QUAL scores and compute with them downstream.</li>
+</ul>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/vtrubets">vtrubets</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
