@@ -116,10 +116,15 @@ class consensus_vcf:
     for sample in self.samples:
       ## TODO: include where data comes from in self.format -- this is hacky
       if genotypes[sample] == '*':
-        cn = 'F'
+        ## genotype was discordant
+        cn = 'D'
+        geno = './.'
+      elif genotypes[sample] == '**':
+        ## genotype was ambiguous
+        cn = 'A'
         geno = './.'
       else:
-        cn = 'T'
+        cn = 'C'
         geno = self.convert_genotype(genotypes[sample])
       genotypeFields.append(cn+':'+geno)
       

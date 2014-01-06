@@ -1,4 +1,7 @@
 import itertools as it
+from collections import Counter
+from my_exceptions import ambiguousConcordance
+from my_exceptions import discordant
 
 class variant_ensemble:
   '''
@@ -15,51 +18,41 @@ class variant_ensemble:
     self.ignoreMissing = kwargs.get('ignoreMissing')
     self.threshold = kwargs.get('threshold')
 
-  def is_genotype_consensus(self, calls):
+  def _genotype_concordance(self, calls, thresold):
     '''
-    Determine whether all _Calls for a sample at a site are equal.
+    Find the call which agrees at a certain threshold. If a tie is observed, an exception is raised, and a missing value will be written to the VCF file and flagged as ambiguous.
     '''
-    ## check to see if all calls are equal
-    if calls[1:] == calls[:-1]: return True
-    else: return False
+    ## count occurences of a genotype, and those which match the threshold
+    counted = Counter(calls).most_common()
+    matched = [ x[0] for x in counted if x[1]>=self.threshold ]
+    ## check for a tie -- and raise an exception if necessary
+    if len(matched) > 1: raise ambiguousConcordance('tie!')
+    elif not matched: raise discordant('no match')
+    else: return matched[0]
+    
+  def set_concordance(self, threshold):
+    '''
+    Return a set of concordant genotypes at a specified threshold.
+    '''
 
-  def concordant_genotypes(self):
-    '''
-    Return concordant genotypes at an arbitrary threshold.
-    '''
-    consensusGenotypes = dict()
+    concordantGenotypes = dict()
     for sample in self.samples:
-      genotypes = [ record.genotype(sample) for record in self.recordSet ]
-      ## handle missing genotypes according to the flag passed in
-      if self.ignoreMissing: genotypes = [ x for x in genotypes if x.gt_type != None ]
-      if not genotypes:
-        consensusGenotypes[sample] = './.'
-        continue
-
-      ## deliver the concordant genotypes
-
-
-  def set_consensus(self):
-    '''
-    Return a consensus set of genotypes.
-      Update: DO NOT Discount missing data during the vote.
-    '''
-    consensusGenotypes = dict()
-    for sample in self.samples:
-      genotypes = [ record.genotype(sample) for record in self.recordSet ]
+      calls = [ record.genotype(sample).gt_type for record in self.recordSet ]
       #genotypes = [ x for x in genotypes if x.gt_type != None ] ## now treating missing as valid genotype
       ## handle the missing genotype data here
-      if not genotypes:
-        consensusGenotypes[sample] = './.'
+      if not calls:
+        concordantGenotypes[sample] = './.'
         continue
-      consensusGenotype = self.is_genotype_consensus(calls=genotypes)
-      if consensusGenotype: 
-        ## return the consensus genotype
-        consensusGenotypes[sample] = genotypes[0].gt_type
-      else:
-        ## no consensus so we return a '*' in its place
-        consensusGenotypes[sample] = '*'
-    return consensusGenotypes
 
+      ## try to find a concordant genotype
+      try:
+        concordantGenotypes[sample] = self._genotype_concordance(calls, threshold)
+      except ambiguousConcordance:
+        ## really we should allow this to bubble up and be handled when writing the VCF
+        concordantGenotypes[sample] = '**'
+      except discordant:
+        concordantGenotypes[sample] = '*'
+     
 
+    return concordantGenotypes
 

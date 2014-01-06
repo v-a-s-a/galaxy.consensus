@@ -15,15 +15,15 @@ def __main__():
   parser.add_argument('--genotype-threshold', '-g', dest='genoThresh', action='store', type=int, help='Number of inputs which must agree for a genotype to be marked as non-missing.')
   args = parser.parse_args()
  
-  ## restrict current version to consensus-only thresholds 
-  if args.genoThresh != len(args.vcfFiles):   
-    print "STOPPING"
-    print "\tGenotype threshold does not match the number of input VCF files. Non-consensus modes of ensemble calling are not yet supported."
-    sys.exit()
-  if args.siteThresh != len(args.vcfFiles):
-    print "STOPPING"
-    print "\tVariant site threshold does not match the number of input VCF files. Non-consensus modes of ensemble calling are not yet supported."
-    sys.exit()
+  ### restrict current version to consensus-only thresholds 
+  #if args.genoThresh != len(args.vcfFiles):   
+  #  print "STOPPING"
+  #  print "\tGenotype threshold does not match the number of input VCF files. Non-consensus modes of ensemble calling are not yet supported."
+  #  sys.exit()
+  #if args.siteThresh != len(args.vcfFiles):
+  #  print "STOPPING"
+  #  print "\tVariant site threshold does not match the number of input VCF files. Non-consensus modes of ensemble calling are not yet supported."
+  #  sys.exit()
 
  
   ## create the VCF ensemble
@@ -31,7 +31,7 @@ def __main__():
  
   ## setup output VCF file. Dummy fields are created for downstream parsing with other tools.
   outVcf = consensus_vcf()
-  outVcf.add_format(id="CN", number="1", type="Character", description="Consensus status")
+  outVcf.add_format(id="CN", number="1", type="Character", description="Consensus status. \'C\' is concordant, \'D\' is discordant, and \'A\' is ambiguous (no clear agreement).")
   outVcf.add_format(id="GT", number="1", type="String", description="Genotype")
   outVcf.add_info(id="X1", number="1", type="String", description="Placeholder for INFO parsing")
   outVcf.add_info(id="X2", number="1", type="String", description="Placeholder 2 for INFO parsing")

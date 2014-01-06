@@ -14,14 +14,11 @@ class simple_variant:
     self.ID = rec.CHROM + ':' + str(rec.POS) + ':' + str(rec.REF) + ':' + str(ALT)
     self.contig = rec.CHROM
     self.pos = rec.POS
-
   def __hash__(self):
     return hash(self.ID)
-
   def __eq__(self, other):
     if self.ID == other.ID: return True
     else: return False
-
   def __str__(self):
     return self.ID    
 
@@ -30,7 +27,6 @@ class vcf_ensemble:
   '''
   Represents an arbitrary number of VCF files describing the same data set.
   '''
-
   @property
   def samples(self):
     '''
@@ -100,8 +96,8 @@ class vcf_ensemble:
     samples = self.samples
     for variant in variants:
       records = [ x.fetch(variant.contig, variant.pos) for x in self.vcfReaders ]
-      ensemble = variant_ensemble(recordSet=records, samples=samples)
-      yield records, ensemble.set_consensus()
+      ensemble = variant_ensemble(recordSet=[ x for x in records if x], samples=samples)
+      yield records, ensemble.set_concordance(genoThresh)
 
 
 
