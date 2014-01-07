@@ -13,21 +13,11 @@ def __main__():
   parser.add_argument('vcfFiles', nargs='+', metavar='VCFS', help='List of VCF files for input.')
   parser.add_argument('--site-threshold', '-s', dest='siteThresh', action='store', type=int, help='Number of inputs which must agree for a site to be included in the output.')
   parser.add_argument('--genotype-threshold', '-g', dest='genoThresh', action='store', type=int, help='Number of inputs which must agree for a genotype to be marked as non-missing.')
+  parser.add_argument('--ignore-missing', '-m', dest='ignoreMissing', action='store_true', help='Flag specifying how to handle missing genotypes in the vote. If present, missing genotypes are excluded from the genotype concordance vote unless all genotypes are missing.')
   args = parser.parse_args()
  
-  ### restrict current version to consensus-only thresholds 
-  #if args.genoThresh != len(args.vcfFiles):   
-  #  print "STOPPING"
-  #  print "\tGenotype threshold does not match the number of input VCF files. Non-consensus modes of ensemble calling are not yet supported."
-  #  sys.exit()
-  #if args.siteThresh != len(args.vcfFiles):
-  #  print "STOPPING"
-  #  print "\tVariant site threshold does not match the number of input VCF files. Non-consensus modes of ensemble calling are not yet supported."
-  #  sys.exit()
-
- 
   ## create the VCF ensemble
-  ensemble = vcf_ensemble(vcfList = args.vcfFiles)
+  ensemble = vcf_ensemble(vcfList = args.vcfFiles, ignoreMissing = args.ignoreMissing)
  
   ## setup output VCF file. Dummy fields are created for downstream parsing with other tools.
   outVcf = consensus_vcf()

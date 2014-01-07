@@ -18,7 +18,7 @@ class variant_ensemble:
     self.ignoreMissing = kwargs.get('ignoreMissing')
     self.threshold = kwargs.get('threshold')
 
-  def _genotype_concordance(self, calls, thresold):
+  def _genotype_concordance(self, calls):
     '''
     Find the call which agrees at a certain threshold. If a tie is observed, an exception is raised, and a missing value will be written to the VCF file and flagged as ambiguous.
     '''
@@ -30,29 +30,24 @@ class variant_ensemble:
     elif not matched: raise discordant('no match')
     else: return matched[0]
     
-  def set_concordance(self, threshold):
+  def set_concordance(self):
     '''
     Return a set of concordant genotypes at a specified threshold.
     '''
-
     concordantGenotypes = dict()
     for sample in self.samples:
       calls = [ record.genotype(sample).gt_type for record in self.recordSet ]
-      #genotypes = [ x for x in genotypes if x.gt_type != None ] ## now treating missing as valid genotype
-      ## handle the missing genotype data here
+      if self.ignoreMissing:
+        calls = [ x for x in calls if x != None ] 
       if not calls:
         concordantGenotypes[sample] = './.'
         continue
-
       ## try to find a concordant genotype
       try:
-        concordantGenotypes[sample] = self._genotype_concordance(calls, threshold)
+        concordantGenotypes[sample] = self._genotype_concordance(calls)
       except ambiguousConcordance:
-        ## really we should allow this to bubble up and be handled when writing the VCF
         concordantGenotypes[sample] = '**'
       except discordant:
         concordantGenotypes[sample] = '*'
-     
-
     return concordantGenotypes
 

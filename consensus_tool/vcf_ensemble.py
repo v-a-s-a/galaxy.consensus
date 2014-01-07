@@ -72,6 +72,7 @@ class vcf_ensemble:
 
   def __init__(self, *args, **kwargs):
     self.vcfs = kwargs.get('vcfList')
+    self.ignoreMissing = kwargs.get('ignoreMissing')
 
   def _concordant_sites(self, threshold):
     '''
@@ -80,9 +81,7 @@ class vcf_ensemble:
     This problem reduces to finding the union of a set of sets. The top level
     set is filled with combinations of VCF sets set by the threshold (i.e.
     combinations of length the threshold).
-
     '''
-
     sets = set()
     for comb in it.combinations(self.variants, threshold):
       sets.add( frozenset(reduce( lambda x, y: x.intersection(y), comb )) ) 
@@ -96,8 +95,8 @@ class vcf_ensemble:
     samples = self.samples
     for variant in variants:
       records = [ x.fetch(variant.contig, variant.pos) for x in self.vcfReaders ]
-      ensemble = variant_ensemble(recordSet=[ x for x in records if x], samples=samples)
-      yield records, ensemble.set_concordance(genoThresh)
+      ensemble = variant_ensemble(recordSet=[ x for x in records if x], samples=samples, threshold = genoThresh, ignoreMissing = self.ignoreMissing)
+      yield records, ensemble.set_concordance()
 
 
 
