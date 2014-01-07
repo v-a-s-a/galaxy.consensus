@@ -21,7 +21,7 @@ def __main__():
  
   ## setup output VCF file. Dummy fields are created for downstream parsing with other tools.
   outVcf = consensus_vcf()
-  outVcf.add_format(id="CN", number="1", type="Character", description="Consensus status. \'C\' is concordant, \'D\' is discordant, and \'A\' is ambiguous (no clear agreement).")
+  outVcf.add_format(id="CN", number="1", type="Character", description="Consensus status. \'C\' is concordant, \'D\' is discordant, and \'A\' is ambiguous (i.e. no majority at the given genotype threshold).")
   outVcf.add_format(id="GT", number="1", type="String", description="Genotype")
   outVcf.add_info(id="X1", number="1", type="String", description="Placeholder for INFO parsing")
   outVcf.add_info(id="X2", number="1", type="String", description="Placeholder 2 for INFO parsing")

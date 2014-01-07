@@ -79,8 +79,8 @@ class vcf_ensemble:
     Find variants that agree at some threshold.
 
     This problem reduces to finding the union of a set of sets. The top level
-    set is filled with combinations of VCF sets set by the threshold (i.e.
-    combinations of length the threshold).
+    set consists of combinations of VCF sets set by the threshold (i.e.
+   variants choose threshold).
     '''
     sets = set()
     for comb in it.combinations(self.variants, threshold):
@@ -89,12 +89,14 @@ class vcf_ensemble:
 
   def concordant_variants(self, siteThresh, genoThresh):
     '''
-    Reduce the ensemble of VCFs.
+    Reduce the ensemble of VCFs into a set of variant sites that agree at some threshold.
     '''
     variants = self._concordant_sites(siteThresh)
     samples = self.samples
     for variant in variants:
       records = [ x.fetch(variant.contig, variant.pos) for x in self.vcfReaders ]
+      ## clean up missing records for a given threshold
+      records = [ x for x in records if x ]
       ensemble = variant_ensemble(recordSet=[ x for x in records if x], samples=samples, threshold = genoThresh, ignoreMissing = self.ignoreMissing)
       yield records, ensemble.set_concordance()
 
