@@ -6,7 +6,7 @@
     </description>
 
     <command interpreter="python">
-        consensus_genotyper.py
+        consensus_caller/galaxy.consensus/consensus_tool/consensus_genotyper.py
           --site-threshold $site_threshold
           --geno-threshold $geno_threshold
           $ignore_missing
