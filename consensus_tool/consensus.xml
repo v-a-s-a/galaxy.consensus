@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 
-<tool name="naive variant consensus caller" id="awesome_consensus_0.1"  > 
+<tool name="Consensus Genotyper for Exome Variants" id="cges"  > 
     <description>
         Naive consensus caller for ATLAS SNP2, GATK UG, freebayes output files.
     </description>
