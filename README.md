@@ -14,7 +14,7 @@ Test data is located in the data/ directory. The following command:
 
 python ./consensus_tool/consensus_genotyper.py --geno-thresh 3 --site-thresh 3 ./data/*vcf > test.output.vcf
 
-Will take the three test files in the data directory and generate a strict consensus of sites and genotypes (i.e. 3/3 files contain the variant site, and 3/3 files agree on the genotype for a sampple at that site).
+Will take the three test files in the data directory and generate a strict consensus of sites and genotypes (i.e. 3/3 files contain the variant site, and 3/3 files agree on the genotype for a sample at that site).
 
 Some things to keep in mind: 
 * Multi-sample VCF files are currently supported, and the output will contain only samples which are found in all input files.
