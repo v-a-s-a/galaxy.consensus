@@ -17,7 +17,7 @@ Some things to keep in mind:
 * Multi-sample VCF files are currently supported, and the output will contain only samples which are found in all input files.
 * Files must be sorted by physical position. This can be achieved using any VCF utility such as [vcf-sort in vcftools](http://vcftools.sourceforge.net/perl_module.html#vcf-sort). The caller works by iterating simultaneously across all input files until a matching variant record is found. If a VCF file is not sorted similarly, it is unlikely that any overlapping sites will be found.
 * VCF files must be indexed with [tabix](http://samtools.sourceforge.net/tabix.shtml). This also requires that they be zipped with bgzip.
-* 
+
 
 ###[Check out the wiki for a more detailed tutorial!](https://github.com/vtrubets/galaxy.consensus/wiki/Tutorial:-Consensus-Genotyper-for-Exome-Sequence)
 
