@@ -7,7 +7,7 @@ This is an implementation of an ensemble variant calling method. Specifically, i
 Usage:
 ==============================
 
-###[Check out the wiki for a tutorial!](https://github.com/vtrubets/galaxy.consensus.wiki.git)
+###[Check out the wiki for a tutorial!](https://github.com/vtrubets/galaxy.consensus/wiki/Tutorial:-Consensus-Genotyper-for-Exome-Sequence)
 
 
 Test data is located in the data/ directory. The following command:
